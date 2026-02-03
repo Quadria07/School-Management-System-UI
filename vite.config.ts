@@ -14,6 +14,8 @@ export default defineConfig({
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
+      // Resolve figma asset imports like `figma:asset/<hash>.png` to the local src/assets folder
+      'figma:asset': path.resolve(__dirname, './src/assets'),
     },
   },
 })
