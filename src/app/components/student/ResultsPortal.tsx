@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { mergeStudentPhotos } from '@/utils/studentPhotoHelper';
-import * as dataFlowService from '@/utils/dataFlowService';
+import { StudentAPI } from '@/utils/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -12,114 +11,69 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
-import { Download, Award, TrendingUp, Calendar } from 'lucide-react';
-import type { BroadsheetData } from '../principal/types';
+import { Download, Award, TrendingUp, Calendar, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+
+interface SubjectResult {
+  subject_name: string;
+  subject_code: string;
+  ca_score: string;
+  exam_score: string;
+  total_score: string;
+  grade: string;
+  teacher_remarks: string | null;
+  term: string;
+}
 
 export const ResultsPortal: React.FC = () => {
   const { user } = useAuth();
-  const [selectedTerm, setSelectedTerm] = useState('first-2025');
-  const [selectedView, setSelectedView] = useState<'ca' | 'term'>('term');
-  const [studentData, setStudentData] = useState<BroadsheetData | null>(null);
-  const [availableResults, setAvailableResults] = useState<any[]>([]);
+  const [selectedTerm, setSelectedTerm] = useState('First Term');
+  const [selectedSession, setSelectedSession] = useState('2024/2025');
 
-  // Load student results from localStorage (synced from teacher's gradebook)
-  useEffect(() => {
-    const loadStudentResults = () => {
-      try {
-        // ✅ CRITICAL: Students can ONLY see APPROVED results
-        // Get APPROVED results only (not pending teacher submissions)
-        const approvedResults = dataFlowService.getApprovedResults();
-        
-        if (approvedResults && approvedResults.length > 0) {
-          setAvailableResults(approvedResults);
-          
-          // Find this student's result from APPROVED results only
-          const currentStudentName = user.name.toUpperCase();
-          const currentClass = 'JSS 3A'; // TODO: Get from student profile
-          
-          // Filter by selected term and result type
-          const term = selectedTerm === 'first-2025' ? 'First Term' : 
-                      selectedTerm === 'third-2024' ? 'Third Term' : 'Second Term';
-          
-          let studentResult = approvedResults.find((r: any) => 
-            (r.studentName.toUpperCase().includes(currentStudentName.split(' ')[0]) ||
-             r.studentName.toUpperCase() === currentStudentName) &&
-            r.resultType === selectedView &&
-            (r.term === term || !r.term) &&
-            r.approvalStatus === 'approved' // ✅ MUST be approved
-          );
-          
-          // If no exact match, try to find first result for this class and type
-          if (!studentResult) {
-            studentResult = approvedResults.find((r: any) => 
-              r.class === currentClass &&
-              r.resultType === selectedView &&
-              r.approvalStatus === 'approved'
-            );
-          }
-          
-          if (studentResult) {
-            // Merge with photos
-            const resultsWithPhotos = mergeStudentPhotos([studentResult]);
-            const dataWithPhoto = resultsWithPhotos[0];
-            
-            // Transform to BroadsheetData format
-            const transformedData: BroadsheetData = {
-              id: studentResult.id || '1',
-              studentName: studentResult.studentName,
-              class: studentResult.class || 'JSS 3A',
-              passportPhoto: dataWithPhoto.passportPhoto,
-              sn: 1,
-              totalScore: studentResult.totalScore || 0,
-              overallAverage: studentResult.average || 0,
-              percentAverage: Math.round(studentResult.average || 0),
-              overallPosition: studentResult.position || 1,
-              grade: studentResult.grade || 'A',
-              remarks: studentResult.remark || 'Good performance',
-              // Map subjects if available
-              english: studentResult.subjects?.find((s: any) => s.subject.toLowerCase().includes('english'))
-                ? {
-                    first: 0,
-                    second: 0,
-                    third: 0,
-                    total: studentResult.subjects.find((s: any) => s.subject.toLowerCase().includes('english')).total,
-                    average: studentResult.subjects.find((s: any) => s.subject.toLowerCase().includes('english')).total,
-                    position: 0
-                  }
-                : undefined,
-              mathematics: studentResult.subjects?.find((s: any) => s.subject.toLowerCase().includes('math'))
-                ? {
-                    first: 0,
-                    second: 0,
-                    third: 0,
-                    total: studentResult.subjects.find((s: any) => s.subject.toLowerCase().includes('math')).total,
-                    average: studentResult.subjects.find((s: any) => s.subject.toLowerCase().includes('math')).total,
-                    position: 0
-                  }
-                : undefined,
-            };
-            
-            setStudentData(transformedData);
-          } else {
-            // No approved results for this student/term/type
-            setStudentData(null);
-          }
-        } else {
-          // No approved results at all
-          setStudentData(null);
-        }
-      } catch (error) {
-        console.error('Error loading student results:', error);
-        setStudentData(null);
+  // API States
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<SubjectResult[]>([]);
+
+  // Calculate summary stats
+  const totalScore = results.reduce((sum, r) => sum + parseFloat(r.total_score || '0'), 0);
+  const averageScore = results.length > 0 ? totalScore / results.length : 0;
+  const overallGrade = averageScore >= 70 ? 'A' : averageScore >= 60 ? 'B' : averageScore >= 50 ? 'C' : averageScore >= 40 ? 'D' : 'F';
+
+  // Fetch results from API
+  const fetchResults = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await StudentAPI.getResults(selectedTerm, selectedSession);
+
+      if (response.status === 'success') {
+        setResults(response.data || []);
+      } else {
+        setError(response.error || response.message || 'Failed to load results');
       }
-    };
-    
-    loadStudentResults();
-    
-    // Poll for updates every 30 seconds
-    const interval = setInterval(loadStudentResults, 30000);
-    return () => clearInterval(interval);
-  }, [selectedTerm, selectedView, user]);
+    } catch (err: any) {
+      console.error('Error fetching results:', err);
+      setError(err.message || 'Failed to connect to server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+  }, [selectedTerm, selectedSession]);
+
+  const getGradeColor = (grade: string) => {
+    switch (grade) {
+      case 'A': return 'bg-green-500';
+      case 'B': return 'bg-blue-500';
+      case 'C': return 'bg-amber-500';
+      case 'D': return 'bg-orange-500';
+      case 'F': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
 
   return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
@@ -133,12 +87,16 @@ export const ResultsPortal: React.FC = () => {
             View your academic performance and progress
           </p>
         </div>
+        <Button variant="outline" onClick={fetchResults} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Select Term & Assessment Type</CardTitle>
+          <CardTitle>Select Term & Session</CardTitle>
           <CardDescription>Choose which results you want to view</CardDescription>
         </CardHeader>
         <CardContent>
@@ -150,21 +108,21 @@ export const ResultsPortal: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="first-2025">First Term 2025</SelectItem>
-                  <SelectItem value="second-2025">Second Term 2025</SelectItem>
-                  <SelectItem value="third-2024">Third Term 2024</SelectItem>
+                  <SelectItem value="First Term">First Term</SelectItem>
+                  <SelectItem value="Second Term">Second Term</SelectItem>
+                  <SelectItem value="Third Term">Third Term</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-2 block">Result Type</label>
-              <Select value={selectedView} onValueChange={(v: 'ca' | 'term') => setSelectedView(v)}>
+              <label className="text-sm font-medium mb-2 block">Academic Session</label>
+              <Select value={selectedSession} onValueChange={setSelectedSession}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ca">Continuous Assessment (CA)</SelectItem>
-                  <SelectItem value="term">Terminal Report Card</SelectItem>
+                  <SelectItem value="2024/2025">2024/2025</SelectItem>
+                  <SelectItem value="2023/2024">2023/2024</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -172,15 +130,38 @@ export const ResultsPortal: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+            <p className="text-gray-600">Loading your results...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="flex items-center gap-3 p-4">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <span className="text-red-700">{error}</span>
+            <Button variant="outline" size="sm" onClick={fetchResults} className="ml-auto">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Results Display */}
-      {studentData ? (
+      {!loading && !error && results.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Your Academic Performance</CardTitle>
                 <CardDescription>
-                  {selectedView === 'ca' ? 'Continuous Assessment Results' : 'Terminal Report Card'}
+                  {selectedTerm} - {selectedSession}
                 </CardDescription>
               </div>
               <Button variant="outline">
@@ -192,22 +173,14 @@ export const ResultsPortal: React.FC = () => {
           <CardContent className="space-y-6">
             {/* Student Info */}
             <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
-              {studentData.passportPhoto ? (
-                <img
-                  src={studentData.passportPhoto}
-                  alt={studentData.studentName}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-blue-200 flex items-center justify-center border-4 border-white shadow-md">
-                  <span className="text-2xl font-bold text-blue-700">
-                    {studentData.studentName.charAt(0)}
-                  </span>
-                </div>
-              )}
+              <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center border-4 border-white shadow-md">
+                <span className="text-xl font-bold text-blue-700">
+                  {user?.name?.charAt(0) || 'S'}
+                </span>
+              </div>
               <div>
-                <h3 className="text-xl font-bold text-blue-950">{studentData.studentName}</h3>
-                <p className="text-sm text-gray-600">{studentData.class}</p>
+                <h3 className="text-xl font-bold text-blue-950">{user?.name || 'Student'}</h3>
+                <p className="text-sm text-gray-600">{user?.class || 'Class'}</p>
               </div>
             </div>
 
@@ -215,43 +188,92 @@ export const ResultsPortal: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-3">
+                  <CardDescription>Subjects</CardDescription>
+                  <CardTitle className="text-2xl">{results.length}</CardTitle>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-3">
                   <CardDescription>Total Score</CardDescription>
-                  <CardTitle className="text-2xl">{studentData.totalScore}</CardTitle>
+                  <CardTitle className="text-2xl">{totalScore.toFixed(0)}</CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
                   <CardDescription>Average</CardDescription>
-                  <CardTitle className="text-2xl">{studentData.percentAverage}%</CardTitle>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardDescription>Position</CardDescription>
                   <CardTitle className="text-2xl flex items-center gap-2">
-                    <Award className="w-6 h-6 text-amber-500" />
-                    {studentData.overallPosition}
+                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    {averageScore.toFixed(1)}%
                   </CardTitle>
                 </CardHeader>
               </Card>
               <Card>
                 <CardHeader className="pb-3">
-                  <CardDescription>Grade</CardDescription>
+                  <CardDescription>Overall Grade</CardDescription>
                   <CardTitle className="text-2xl">
-                    <Badge className="text-lg">{studentData.grade}</Badge>
+                    <Badge className={`text-lg ${getGradeColor(overallGrade)}`}>{overallGrade}</Badge>
                   </CardTitle>
                 </CardHeader>
               </Card>
             </div>
 
-            {/* Remarks */}
+            {/* Subject Breakdown */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-3">Subject Results</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-3 border">Subject</th>
+                      <th className="text-center p-3 border">CA</th>
+                      <th className="text-center p-3 border">Exam</th>
+                      <th className="text-center p-3 border">Total</th>
+                      <th className="text-center p-3 border">Grade</th>
+                      <th className="text-left p-3 border">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((result, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="p-3 border">
+                          <div>
+                            <div className="font-medium">{result.subject_name}</div>
+                            <div className="text-xs text-gray-500">{result.subject_code}</div>
+                          </div>
+                        </td>
+                        <td className="text-center p-3 border">{parseFloat(result.ca_score).toFixed(0)}</td>
+                        <td className="text-center p-3 border">{parseFloat(result.exam_score).toFixed(0)}</td>
+                        <td className="text-center p-3 border font-semibold">{parseFloat(result.total_score).toFixed(0)}</td>
+                        <td className="text-center p-3 border">
+                          <Badge className={getGradeColor(result.grade)}>{result.grade}</Badge>
+                        </td>
+                        <td className="p-3 border text-sm text-gray-600">
+                          {result.teacher_remarks || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Summary Remarks */}
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h4 className="font-semibold text-green-900 mb-2">Teacher's Remarks</h4>
-              <p className="text-green-800">{studentData.remarks}</p>
+              <h4 className="font-semibold text-green-900 mb-2">Performance Summary</h4>
+              <p className="text-green-800">
+                {averageScore >= 70 ? 'Excellent performance! Keep up the great work.' :
+                  averageScore >= 60 ? 'Good performance. Continue to strive for excellence.' :
+                    averageScore >= 50 ? 'Satisfactory performance. There is room for improvement.' :
+                      averageScore >= 40 ? 'Fair performance. More effort is needed.' :
+                        'Needs improvement. Please seek additional help.'}
+              </p>
             </div>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* No Results State */}
+      {!loading && !error && results.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="w-16 h-16 text-gray-400 mb-4" />
@@ -259,10 +281,10 @@ export const ResultsPortal: React.FC = () => {
               No Results Available
             </h3>
             <p className="text-gray-600 text-center max-w-md">
-              Results for {selectedView === 'ca' ? 'Continuous Assessment' : 'Terminal Report'} in {selectedTerm.replace('-', ' ')} have not been published yet.
+              Results for {selectedTerm} ({selectedSession}) have not been published yet.
             </p>
             <p className="text-sm text-gray-500 mt-2">
-              ✅ Results must be approved by the Principal before they appear here
+              ✅ Results will appear here once they are uploaded and approved.
             </p>
           </CardContent>
         </Card>

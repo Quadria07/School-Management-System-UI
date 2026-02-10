@@ -57,20 +57,20 @@ export const getAllMessages = (): Message[] => {
  */
 export const getMessagesForUser = (userId: string, userRole: string): Message[] => {
   const allMessages = getAllMessages();
-  
+
   return allMessages.filter(message => {
     // User is the recipient
     if (message.recipientId === userId) return true;
-    
+
     // User is the sender
     if (message.senderId === userId) return true;
-    
+
     // Broadcast messages
     if (message.recipientRole === 'all_teachers' && userRole === 'teacher') return true;
     if (message.recipientRole === 'all_parents' && userRole === 'parent') return true;
     if (message.recipientRole === 'all_students' && userRole === 'student') return true;
     if (message.recipientRole === 'all_staff' && ['teacher', 'hr_manager', 'bursar'].includes(userRole)) return true;
-    
+
     return false;
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
@@ -80,14 +80,14 @@ export const getMessagesForUser = (userId: string, userRole: string): Message[] 
  */
 export const getInboxMessages = (userId: string, userRole: string): Message[] => {
   const allMessages = getAllMessages();
-  
+
   return allMessages.filter(message => {
     if (message.recipientId === userId) return true;
     if (message.recipientRole === 'all_teachers' && userRole === 'teacher') return true;
     if (message.recipientRole === 'all_parents' && userRole === 'parent') return true;
     if (message.recipientRole === 'all_students' && userRole === 'student') return true;
     if (message.recipientRole === 'all_staff' && ['teacher', 'hr_manager', 'bursar'].includes(userRole)) return true;
-    
+
     return false;
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
@@ -97,7 +97,7 @@ export const getInboxMessages = (userId: string, userRole: string): Message[] =>
  */
 export const getSentMessages = (userId: string): Message[] => {
   const allMessages = getAllMessages();
-  
+
   return allMessages
     .filter(message => message.senderId === userId)
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -108,17 +108,17 @@ export const getSentMessages = (userId: string): Message[] => {
  */
 export const sendMessage = (message: Omit<Message, 'id' | 'timestamp' | 'status'>): Message => {
   const allMessages = getAllMessages();
-  
+
   const newMessage: Message = {
     ...message,
     id: `MSG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     timestamp: new Date().toISOString(),
     status: 'sent',
   };
-  
+
   allMessages.push(newMessage);
   localStorage.setItem(MESSAGES_KEY, JSON.stringify(allMessages));
-  
+
   return newMessage;
 };
 
@@ -128,7 +128,7 @@ export const sendMessage = (message: Omit<Message, 'id' | 'timestamp' | 'status'
 export const markAsRead = (messageId: string): void => {
   const allMessages = getAllMessages();
   const messageIndex = allMessages.findIndex(m => m.id === messageId);
-  
+
   if (messageIndex !== -1) {
     allMessages[messageIndex].status = 'read';
     localStorage.setItem(MESSAGES_KEY, JSON.stringify(allMessages));
@@ -141,7 +141,7 @@ export const markAsRead = (messageId: string): void => {
 export const markAsReplied = (messageId: string): void => {
   const allMessages = getAllMessages();
   const messageIndex = allMessages.findIndex(m => m.id === messageId);
-  
+
   if (messageIndex !== -1) {
     allMessages[messageIndex].status = 'replied';
     localStorage.setItem(MESSAGES_KEY, JSON.stringify(allMessages));
@@ -161,7 +161,7 @@ export const getUnreadCount = (userId: string, userRole: string): number => {
  */
 export const getMessageThread = (threadId: string): Message[] => {
   const allMessages = getAllMessages();
-  
+
   return allMessages
     .filter(message => message.thread === threadId || message.id === threadId)
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -176,19 +176,19 @@ export const replyToMessage = (
 ): Message => {
   const allMessages = getAllMessages();
   const originalMessage = allMessages.find(m => m.id === originalMessageId);
-  
+
   const threadId = originalMessage?.thread || originalMessageId;
-  
+
   const reply = sendMessage({
     ...replyContent,
     replyTo: originalMessageId,
     thread: threadId,
     subject: `Re: ${replyContent.subject}`,
   });
-  
+
   // Mark original message as replied
   markAsReplied(originalMessageId);
-  
+
   return reply;
 };
 
@@ -222,28 +222,28 @@ export const getAllAnnouncements = (): Announcement[] => {
 export const getAnnouncementsForUser = (userRole: string): Announcement[] => {
   const allAnnouncements = getAllAnnouncements();
   const now = new Date();
-  
+
   return allAnnouncements
     .filter(announcement => {
       // Check if expired
       if (announcement.expiryDate && new Date(announcement.expiryDate) < now) {
         return false;
       }
-      
+
       // Check target audience
       if (announcement.targetAudience === 'all') return true;
       if (announcement.targetAudience === 'teachers' && userRole === 'teacher') return true;
       if (announcement.targetAudience === 'students' && userRole === 'student') return true;
       if (announcement.targetAudience === 'parents' && userRole === 'parent') return true;
       if (announcement.targetAudience === 'staff' && ['teacher', 'hr_manager', 'bursar'].includes(userRole)) return true;
-      
+
       return false;
     })
     .sort((a, b) => {
       // Pinned items first
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      
+
       // Then by timestamp
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     });
@@ -254,16 +254,16 @@ export const getAnnouncementsForUser = (userRole: string): Announcement[] => {
  */
 export const createAnnouncement = (announcement: Omit<Announcement, 'id' | 'timestamp'>): Announcement => {
   const allAnnouncements = getAllAnnouncements();
-  
+
   const newAnnouncement: Announcement = {
     ...announcement,
     id: `ANN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     timestamp: new Date().toISOString(),
   };
-  
+
   allAnnouncements.push(newAnnouncement);
   localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(allAnnouncements));
-  
+
   return newAnnouncement;
 };
 
@@ -277,82 +277,10 @@ export const deleteAnnouncement = (announcementId: string): void => {
 };
 
 /**
- * Initialize sample messages for demo
+ * Initialize sample messages (Disabled for production/live data)
  */
 export const initializeSampleMessages = (): void => {
-  const existingMessages = getAllMessages();
-  
-  if (existingMessages.length === 0) {
-    const sampleMessages: Message[] = [
-      {
-        id: 'MSG-001',
-        senderId: 'principal@bfoia.edu.ng',
-        senderName: 'Dr. Adeyemi (Principal)',
-        senderRole: 'principal',
-        recipientId: 'teacher@bfoia.edu.ng',
-        recipientName: 'Mrs. Bello (Mathematics)',
-        recipientRole: 'teacher',
-        subject: 'First Term Results Submission',
-        content: 'Dear Mrs. Bello,\n\nPlease ensure all first term results for JSS 3A are submitted by Friday. The broadsheet looks excellent so far.\n\nBest regards,\nDr. Adeyemi',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        status: 'read',
-        priority: 'normal',
-        category: 'academic',
-      },
-      {
-        id: 'MSG-002',
-        senderId: 'teacher@bfoia.edu.ng',
-        senderName: 'Mrs. Bello (Mathematics)',
-        senderRole: 'teacher',
-        recipientId: 'principal@bfoia.edu.ng',
-        recipientName: 'Dr. Adeyemi (Principal)',
-        recipientRole: 'principal',
-        subject: 'Re: First Term Results Submission',
-        content: 'Dear Principal,\n\nThank you for the reminder. I have just submitted all JSS 3A results. Please review and approve.\n\nRespectfully,\nMrs. Bello',
-        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-        status: 'read',
-        priority: 'normal',
-        category: 'academic',
-        replyTo: 'MSG-001',
-        thread: 'MSG-001',
-      },
-    ];
-    
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(sampleMessages));
-  }
-  
-  const existingAnnouncements = getAllAnnouncements();
-  
-  if (existingAnnouncements.length === 0) {
-    const sampleAnnouncements: Announcement[] = [
-      {
-        id: 'ANN-001',
-        authorId: 'principal@bfoia.edu.ng',
-        authorName: 'Dr. Adeyemi',
-        authorRole: 'Principal',
-        title: 'Mid-Term Break Announcement',
-        content: 'The mid-term break will commence on Friday, January 31st, 2026. Students are expected to resume on Monday, February 10th, 2026. Have a wonderful break!',
-        targetAudience: 'all',
-        priority: 'high',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        isPinned: true,
-      },
-      {
-        id: 'ANN-002',
-        authorId: 'bursar@bfoia.edu.ng',
-        authorName: 'Mr. Okonkwo',
-        authorRole: 'Bursar',
-        title: 'School Fees Payment Deadline',
-        content: 'Parents are reminded that the deadline for second term fees payment is February 15th, 2026. Late payment attracts a 10% penalty.',
-        targetAudience: 'parents',
-        priority: 'urgent',
-        timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-        isPinned: false,
-      },
-    ];
-    
-    localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(sampleAnnouncements));
-  }
+  // Demo data removed to ensure live data connection
 };
 
 /**
@@ -372,7 +300,7 @@ export const getRoleDisplayName = (role: string): string => {
     all_students: 'All Students',
     all_staff: 'All Staff',
   };
-  
+
   return roleMap[role] || role;
 };
 
@@ -386,11 +314,11 @@ export const formatRelativeTime = (timestamp: string): string => {
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
-  
+
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  
+
   return messageDate.toLocaleDateString();
 };

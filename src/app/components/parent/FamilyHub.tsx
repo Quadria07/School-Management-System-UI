@@ -39,74 +39,14 @@ interface FamilyHubProps {
 }
 
 export const FamilyHub: React.FC<FamilyHubProps> = ({ onNavigate }) => {
-  const { selectedChild, setSelectedChild, children } = useParent();
+  const context = useParent();
+  const selectedChild = context?.selectedChild;
+  const children = context?.children || [];
 
-  const [schoolEvents] = useState<SchoolEvent[]>([
-    {
-      id: '1',
-      title: 'New Year Holiday',
-      date: 'Jan 1, 2026',
-      type: 'holiday',
-    },
-    {
-      id: '2',
-      title: 'Mid-Term Examinations Begin',
-      date: 'Jan 6 - Jan 10, 2026',
-      type: 'exam',
-    },
-    {
-      id: '3',
-      title: 'PTA General Meeting',
-      date: 'Jan 15, 2026 - 10:00 AM',
-      type: 'meeting',
-    },
-    {
-      id: '4',
-      title: 'Inter-House Sports Competition',
-      date: 'Jan 20, 2026',
-      type: 'event',
-    },
-  ]);
+  const [schoolEvents] = useState<SchoolEvent[]>([]);
+  const [recentAlerts] = useState<RecentAlert[]>([]);
 
-  const [recentAlerts] = useState<RecentAlert[]>([
-    {
-      id: '1',
-      childName: 'Oluwatunde',
-      message: 'Completed Mathematics CBT exam - Score: 92%',
-      type: 'success',
-      timestamp: '2 hours ago',
-    },
-    {
-      id: '2',
-      childName: 'Adeola',
-      message: 'Outstanding fee balance: ₦45,000',
-      type: 'warning',
-      timestamp: '1 day ago',
-    },
-    {
-      id: '3',
-      childName: 'Chinedu',
-      message: 'Marked present today at 7:45 AM',
-      type: 'success',
-      timestamp: 'Today',
-    },
-    {
-      id: '4',
-      childName: 'Oluwatunde',
-      message: 'New assignment posted in English Language',
-      type: 'info',
-      timestamp: 'Yesterday',
-    },
-    {
-      id: '5',
-      childName: 'Adeola',
-      message: 'Report card for First Term is now available',
-      type: 'info',
-      timestamp: '2 days ago',
-    },
-  ]);
-
-  const totalBalance = children.reduce((sum, child) => sum + child.outstandingBalance, 0);
+  const totalBalance = children.reduce((sum: number, child: any) => sum + child.outstandingBalance, 0);
 
   const getEventIcon = (type: string) => {
     switch (type) {
@@ -182,9 +122,9 @@ export const FamilyHub: React.FC<FamilyHubProps> = ({ onNavigate }) => {
               )}
             </div>
           </div>
-          
+
           {totalBalance > 0 && (
-            <Button 
+            <Button
               className="w-full bg-green-600 hover:bg-green-700"
               onClick={() => onNavigate && onNavigate('/fee-management')}
             >
@@ -261,8 +201,8 @@ export const FamilyHub: React.FC<FamilyHubProps> = ({ onNavigate }) => {
                   </CardTitle>
                   <CardDescription>Latest updates from all your children</CardDescription>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => onNavigate && onNavigate('/activities')}
                 >
@@ -327,8 +267,8 @@ export const FamilyHub: React.FC<FamilyHubProps> = ({ onNavigate }) => {
                   </div>
                 ))}
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full mt-4"
                 onClick={() => onNavigate && onNavigate('/school-calendar')}
               >

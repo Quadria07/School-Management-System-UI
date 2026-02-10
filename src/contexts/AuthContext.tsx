@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '../types';
+import { AuthAPI, TokenService } from '../utils/api';
 
 // Authentication Context for BFOIA School Management System
-// Version: 2.0 - Production Ready (Role Switching Removed)
+// Version: 3.0 - Connected to Real Backend API
 
 interface AuthContextType {
   user: User | null;
@@ -40,137 +41,65 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Mock users for demo
-const MOCK_USERS: Record<UserRole, User> = {
-  proprietor: {
-    id: 'prop-1',
-    name: 'Bishop Felix Owolabi',
-    email: 'proprietor@bfoia.edu.ng',
-    role: 'proprietor',
-    department: 'Administration',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bishop',
-  },
-  principal: {
-    id: 'princ-1',
-    name: 'Dr. Principal',
-    email: 'principal@bfoia.edu.ng',
-    role: 'principal',
-    department: 'Administration',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Principal',
-  },
-  hr: {
-    id: 'hr-1',
-    name: 'HR Manager',
-    email: 'hr@bfoia.edu.ng',
-    role: 'hr',
-    department: 'Human Resources',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=HR',
-  },
-  bursar: {
-    id: 'bur-1',
-    name: 'Chief Bursar',
-    email: 'bursar@bfoia.edu.ng',
-    role: 'bursar',
-    department: 'Finance',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bursar',
-  },
-  teacher: {
-    id: 'teach-1',
-    name: 'Mr. Teacher',
-    email: 'teacher@bfoia.edu.ng',
-    role: 'teacher',
-    department: 'Mathematics',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher',
-  },
-  student: {
-    id: 'stud-1',
-    name: 'ADEYEMI, John Oluwaseun',
-    email: 'student@bfoia.edu.ng',
-    role: 'student',
-    class: 'JSS 3A',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-    studentId: 'BFOIA/2023/001',
-  },
-  parent: {
-    id: 'par-1',
-    name: 'Mr. & Mrs. Adeyemi',
-    email: 'parent@bfoia.edu.ng',
-    role: 'parent',
-    academicSession: '2025/2026',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Parents',
-  },
+// Helper to convert backend user to frontend User type
+const mapBackendUser = (backendUser: any): User => {
+  return {
+    id: backendUser.id,
+    name: backendUser.full_name,
+    email: backendUser.email || '',
+    role: backendUser.role as UserRole,
+    department: backendUser.department,
+    class: backendUser.class_name,
+    academicSession: backendUser.academic_session || '2024/2025',
+    avatar: backendUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${backendUser.full_name}`,
+    studentId: backendUser.student_id,
+    staffId: backendUser.staff_id,
+  };
 };
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
 
+  // Check for existing session on app load
+  useEffect(() => {
+    const savedUser = TokenService.getUser();
+    const token = TokenService.getToken();
+
+    if (savedUser && token) {
+      setUser(mapBackendUser(savedUser));
+    }
+    setLoading(false);
+  }, []);
+
   const login = async (email: string, password: string) => {
-    setLoading(true);
+    // Don't set global loading here - LoginPage handles its own loading state
     try {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await AuthAPI.login(email, password);
 
-      // Simple mock login logic
-      // Check if email contains a role name for easy testing
-      let matchedRole: UserRole | undefined;
-      
-      if (email.includes('proprietor')) matchedRole = 'proprietor';
-      else if (email.includes('principal')) matchedRole = 'principal';
-      else if (email.includes('hr')) matchedRole = 'hr';
-      else if (email.includes('bursar')) matchedRole = 'bursar';
-      else if (email.includes('teacher')) matchedRole = 'teacher';
-      else if (email.includes('student')) matchedRole = 'student';
-      else if (email.includes('parent')) matchedRole = 'parent';
-      
-      // Default to proprietor if no specific role found (or exact match for 'admin')
-      if (!matchedRole && (email === 'admin@bfoia.edu.ng' || email === 'demo@bfoia.edu.ng')) {
-        matchedRole = 'proprietor';
-      }
-
-      if (matchedRole) {
-        setUser(MOCK_USERS[matchedRole]);
+      if (response.status === 'success' && response.user) {
+        const mappedUser = mapBackendUser(response.user);
+        setUser(mappedUser);
+        console.log('Login successful:', mappedUser);
       } else {
-        // Fallback to student for unknown emails in demo mode
-        setUser({
-          ...MOCK_USERS['student'],
-          email: email,
-          name: email.split('@')[0],
-        });
+        throw new Error(response.error || response.message || 'Login failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+      throw error; // Re-throw so LoginPage can display it
     }
   };
 
   const signup = async (userData: SignupData) => {
     setLoading(true);
     try {
-      // Simulate network delay
+      // TODO: Connect to signup API when available
+      // For now, simulate signup
       await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // In a real app, this would make an API call to create the user
-      // For demo purposes, we'll just store the data and simulate success
       console.log('New user signup:', userData);
 
-      // Simulate validation - check if email already exists (basic check)
-      if (userData.email === 'proprietor@bfoia.edu.ng' || 
-          userData.email === 'principal@bfoia.edu.ng' ||
-          userData.email === 'teacher@bfoia.edu.ng') {
-        throw new Error('This email is already registered. Please use a different email or login.');
-      }
-
-      // Create a pending user and add to pending list
+      // Create a pending user
       const newUser: User = {
         id: `user-${Date.now()}`,
         name: userData.fullName,
@@ -178,17 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: userData.role,
         department: userData.department,
         class: userData.class,
-        academicSession: '2025/2026',
+        academicSession: '2024/2025',
         avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.fullName}`,
         approvalStatus: 'pending',
       };
 
-      // Add to pending users list
       setPendingUsers(prev => [...prev, newUser]);
-
-      // In a real app, you would create the user in the database here
-      // For now, we just simulate success without actually creating the user
-      // The user will need to login after signup and approval
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -198,14 +122,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
-    // Simulate network delay
+    // TODO: Connect to password reset API
     await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // In a real app, this would send a password reset email
     console.log('Password reset requested for:', email);
-    
-    // Simulate success
-    return;
   };
 
   const approveUser = (userId: string) => {
@@ -221,7 +140,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         return u;
       });
-      // Remove from pending list after approval
       return updatedUsers.filter(u => u.approvalStatus === 'pending');
     });
   };
@@ -238,21 +156,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         return u;
       });
-      // Remove from pending list after rejection
       return updatedUsers.filter(u => u.approvalStatus === 'pending');
     });
   };
 
   const logout = () => {
+    AuthAPI.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      login, 
-      logout, 
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      logout,
       signup,
       resetPassword,
       pendingUsers,

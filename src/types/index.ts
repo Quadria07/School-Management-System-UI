@@ -1,6 +1,6 @@
 // Type definitions for BFOIA School Management System
 
-export type UserRole = 
+export type UserRole =
   | 'proprietor'
   | 'principal'
   | 'hr'
@@ -18,6 +18,8 @@ export interface User {
   department?: string;
   class?: string;
   academicSession: string;
+  currentTerm?: string;
+  currentSession?: string;
   studentId?: string;
   approvalStatus?: 'pending' | 'approved' | 'rejected';
   approvedBy?: string;

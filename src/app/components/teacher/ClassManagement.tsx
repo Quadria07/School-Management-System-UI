@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { TeacherAPI, SchoolAPI } from '../../../utils/api';
 import {
   Users,
   FileText,
@@ -42,12 +43,13 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { StudentReportCard } from '../principal/StudentReportCard';
-import { BroadsheetData } from '../principal/ExaminationManagement';
+import { BroadsheetData } from '../principal/types';
 import { BroadsheetView } from '../principal/BroadsheetView';
 import { AttendanceBroadsheet } from '../principal/AttendanceBroadsheet';
+// @ts-ignore
 import schoolLogo from 'figma:asset/05e5dcd127c3f9119091f655ee2db41390342c66.png';
 import { format } from 'date-fns';
-import { getStudentPhoto } from '@/utils/studentPhotoHelper';
+import { getStudentPhoto } from '../../../utils/studentPhotoHelper';
 
 interface SubjectScore {
   subject: string;
@@ -89,6 +91,7 @@ interface StudentTermResult {
   average: number;
   grade: string;
   position: number;
+  remark?: string;
 }
 
 interface StudentBroadsheet {
@@ -134,44 +137,61 @@ const GRADING_SCALE = [
 
 export const ClassManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('attendance');
-  const [selectedTerm, setSelectedTerm] = useState('First Term');
-  const [selectedSession, setSelectedSession] = useState('2024/2025');
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedSession, setSelectedSession] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('all');
-  const [selectedSubject, setSelectedSubject] = useState('Mathematics'); // Added subject state
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  
+
   // Report Cards Submission Dialog States
   const [showReportCardsDialog, setShowReportCardsDialog] = useState(false);
   const [showAttendanceBroadsheet, setShowAttendanceBroadsheet] = useState(false);
   const [viewingStudentId, setViewingStudentId] = useState<string | null>(null);
 
   const { user } = useAuth();
-  const [assignedClass, setAssignedClass] = useState<string>('JSS 3A');
+  const [assignedClass, setAssignedClass] = useState<string>('');
+  const [availableTerms, setAvailableTerms] = useState<string[]>([]);
+  const [availableSessions, setAvailableSessions] = useState<string[]>([]);
 
-  // Load assigned class
+  // Load assigned class and academic settings
   React.useEffect(() => {
-    const loadAssignedClass = () => {
+    const loadData = async () => {
+      // Load assigned class from local storage or user object
       const savedAssignments = localStorage.getItem('classAssignments');
       if (savedAssignments && user?.id) {
         const assignments = JSON.parse(savedAssignments);
-        const foundClass = Object.keys(assignments).find(key => 
-          assignments[key].classTeacherId === user.id || 
+        const foundClass = Object.keys(assignments).find(key =>
+          assignments[key].classTeacherId === user.id ||
           assignments[key].assistantTeacherId === user.id
         );
         if (foundClass) {
           setAssignedClass(foundClass);
         }
+      } else if (user?.class) {
+        setAssignedClass(user.class);
+      }
+
+      // Fetch academic settings from API
+      try {
+        const settingsRes = await SchoolAPI.getAcademicSettings();
+        if (settingsRes.status === 'success' && settingsRes.data) {
+          const data = settingsRes.data as any;
+          if (data.currentTerm) setSelectedTerm(data.currentTerm);
+          if (data.currentSession) setSelectedSession(data.currentSession);
+          if (data.terms) setAvailableTerms(data.terms);
+          if (data.sessions) setAvailableSessions(data.sessions);
+        }
+      } catch (error) {
+        console.error('Error fetching academic settings:', error);
       }
     };
-    
-    loadAssignedClass();
-    
-    // Listen for storage changes to update in real-time if changed in another tab
-    window.addEventListener('storage', loadAssignedClass);
-    return () => window.removeEventListener('storage', loadAssignedClass);
+
+    loadData();
+    window.addEventListener('storage', loadData);
+    return () => window.removeEventListener('storage', loadData);
   }, [user]);
-  
+
   // Mock Submission State for JSS 3A
   const [submissionStatus, setSubmissionStatus] = useState({ ca: false, term: false });
 
@@ -179,352 +199,127 @@ export const ClassManagement: React.FC = () => {
   const [syncedTermResults, setSyncedTermResults] = useState<StudentTermResult[]>([]);
   const [syncedBroadsheetData, setSyncedBroadsheetData] = useState<BroadsheetData[]>([]);
 
-  // Load data from localStorage and sync (with polling)
+  // Load data from API and sync
   React.useEffect(() => {
-    const syncData = () => {
-        const savedResults = localStorage.getItem('gradebook_term_results');
-        const savedStatus = localStorage.getItem('gradebook_submitted_classes');
-        
-        if (savedStatus) {
-            const statusMap = JSON.parse(savedStatus);
-            setSubmissionStatus({
-                ca: statusMap[`${assignedClass}_ca`] === true,
-                term: statusMap[`${assignedClass}_term`] === true
-            });
-        } else {
-            setSubmissionStatus({ ca: false, term: false });
+    const syncData = async () => {
+      if (!assignedClass) return;
+
+      try {
+        const [statsRes, broadsheetRes] = await Promise.all([
+          TeacherAPI.getStats(),
+          TeacherAPI.getFullBroadsheet(assignedClass, selectedTerm, selectedSession)
+        ]);
+
+        if (statsRes.status === 'success') {
+          // Handle stats if needed
         }
 
-        if (savedResults) {
-            const parsedResults: StudentTermResult[] = JSON.parse(savedResults);
-            
-            // Only update if data has changed to avoid unnecessary re-renders (simple check)
-            // For mock, we'll just update.
-            setSyncedTermResults(parsedResults);
+        if (broadsheetRes.status === 'success' && broadsheetRes.data) {
+          const parsedResults: StudentTermResult[] = broadsheetRes.data as any[];
+          setSyncedTermResults(parsedResults);
 
-            // Transform to BroadsheetData format (Re-using the logic)
-            const transformedData: BroadsheetData[] = parsedResults.map((student, index) => {
-                // Helper to extract subject data safely
-                const getSubjectData = (subjectName: string) => {
-                const subject = student.subjects.find(s => 
-                    s.subject.toLowerCase() === subjectName.toLowerCase() || 
-                    s.subject.toLowerCase().includes(subjectName.toLowerCase())
-                );
-                
-                if (!subject) return { first: 0, second: 0, third: 0, total: 0, average: 0, position: 0 };
+          // Transform to BroadsheetData format (Re-using the logic)
+          const transformedData: BroadsheetData[] = parsedResults.map((student, index) => {
+            // Helper to extract subject data safely
+            const getSubjectData = (subjectName: string) => {
+              const subject = student.subjects.find(s =>
+                s.subject.toLowerCase() === subjectName.toLowerCase() ||
+                s.subject.toLowerCase().includes(subjectName.toLowerCase())
+              );
 
-                return {
-                    first: subject.total, 
-                    second: 0, 
-                    third: 0,  
-                    total: subject.total,
-                    average: subject.total, 
-                    position: 0 
-                };
-                };
+              if (!subject) return { first: 0, second: 0, third: 0, total: 0, average: 0, position: 0 };
 
-                return {
-                sn: index + 1,
-                studentName: student.studentName.toUpperCase(),
-                class: assignedClass,
-                passportPhoto: getStudentPhoto(student.studentName),
-                english: getSubjectData('English'),
-                mathematics: getSubjectData('Mathematics'),
-                basicScience: getSubjectData('Basic Science') || getSubjectData('Physics'), 
-                prevocational: getSubjectData('Pre-vocational') || getSubjectData('Biology'), 
-                nationalValues: getSubjectData('National Values') || getSubjectData('Civic'), 
-                totalScore: student.totalScore,
-                overallAverage: student.average,
-                percentAverage: Math.round(student.average),
-                overallPosition: student.position,
-                grade: student.grade,
-                remarks: student.remark || 'Good performance',
-                };
-            });
+              return {
+                first: subject.total,
+                second: 0,
+                third: 0,
+                total: subject.total,
+                average: subject.total,
+                position: 0
+              };
+            };
 
-            setSyncedBroadsheetData(transformedData);
+            return {
+              sn: index + 1,
+              studentName: student.studentName.toUpperCase(),
+              class: assignedClass,
+              passportPhoto: getStudentPhoto(student.studentName),
+              english: getSubjectData('English'),
+              mathematics: getSubjectData('Mathematics'),
+              basicScience: getSubjectData('Basic Science') || getSubjectData('Physics'),
+              prevocational: getSubjectData('Pre-vocational') || getSubjectData('Biology'),
+              nationalValues: getSubjectData('National Values') || getSubjectData('Civic'),
+              totalScore: student.totalScore,
+              overallAverage: student.average,
+              percentAverage: Math.round(student.average),
+              overallPosition: student.position,
+              grade: student.grade,
+              remarks: student.remark || 'Good performance',
+            };
+          });
+
+          setSyncedBroadsheetData(transformedData);
+          setBroadsheet(transformedData as any); // Sync with broadsheet state
+
+          // Also populate term results and CA results if they are empty
+          if (termResults.length === 0) {
+            setTermResults(parsedResults);
+          }
+
+          // Populate attendance students if empty
+          if (attendanceStudents.length === 0) {
+            const students: AttendanceStudent[] = parsedResults.map(s => ({
+              id: s.id,
+              name: s.studentName,
+              admissionNumber: s.admissionNumber,
+              status: null,
+              attendanceRate: 100, // Default to 100% or fetch from API
+              totalAbsences: 0
+            }));
+            setAttendanceStudents(students);
+          }
+
+          // Generate CA results from term results for display
+          if (caResults.length === 0) {
+            const caRes: StudentCAResult[] = parsedResults.map(s => ({
+              id: s.id,
+              studentName: s.studentName,
+              admissionNumber: s.admissionNumber,
+              subjects: s.subjects.map(subj => ({
+                subject: subj.subject,
+                teacher: subj.teacher,
+                periodicTest: subj.ca1,
+                midTermTest: subj.ca2,
+                total: (subj.ca1 || 0) + (subj.ca2 || 0),
+                percentage: (((subj.ca1 || 0) + (subj.ca2 || 0)) / 30) * 100, // Assuming CA is 30%
+                grade: getGrade((((subj.ca1 || 0) + (subj.ca2 || 0)) / 30) * 100)
+              })),
+              totalScore: s.subjects.reduce((sum, subj) => sum + (subj.ca1 || 0) + (subj.ca2 || 0), 0),
+              average: s.subjects.reduce((sum, subj) => sum + (subj.ca1 || 0) + (subj.ca2 || 0), 0) / (s.subjects.length || 1),
+              overallGrade: getGrade(s.average), // Use term average for grade if CA average isn't enough
+              position: s.position
+            }));
+            setCAResults(caRes);
+          }
         }
+      } catch (error) {
+        console.error('Error syncing class data:', error);
+      }
     };
 
     syncData();
-    const interval = setInterval(syncData, 2000); // Poll every 2 seconds
+    const interval = setInterval(syncData, 5000); // Poll every 5 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [assignedClass, selectedTerm, selectedSession]);
 
-  // Attendance State
-  const [attendanceStudents, setAttendanceStudents] = useState<AttendanceStudent[]>([
-    {
-      id: '1',
-      name: 'Adebayo Oluwaseun',
-      admissionNumber: 'BFO/2023/001',
-      status: 'present',
-      attendanceRate: 98,
-      totalAbsences: 1,
-    },
-    {
-      id: '2',
-      name: 'Chioma Nwosu',
-      admissionNumber: 'BFO/2023/002',
-      status: 'present',
-      attendanceRate: 100,
-      totalAbsences: 0,
-    },
-    {
-      id: '3',
-      name: 'Ibrahim Yusuf',
-      admissionNumber: 'BFO/2023/003',
-      status: null,
-      attendanceRate: 95,
-      totalAbsences: 2,
-    },
-    {
-      id: '4',
-      name: 'Grace Okonkwo',
-      admissionNumber: 'BFO/2023/004',
-      status: null,
-      attendanceRate: 97,
-      totalAbsences: 1,
-    },
-    {
-      id: '5',
-      name: 'Daniel Akintola',
-      admissionNumber: 'BFO/2023/005',
-      status: null,
-      attendanceRate: 85,
-      totalAbsences: 6,
-    },
-  ]);
-
-  // Mock data - CA Results (aggregated from all subject teachers)
-  const [caResults] = useState<StudentCAResult[]>([
-    {
-      id: '1',
-      studentName: 'Adebayo Oluwaseun',
-      admissionNumber: 'BFO/2023/001',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', periodicTest: 20, midTermTest: 20, total: 40, percentage: 100, grade: 'A' },
-        { subject: 'English', teacher: 'Mrs. Okafor', periodicTest: 18, midTermTest: 19, total: 37, percentage: 92.5, grade: 'A' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', periodicTest: 19, midTermTest: 20, total: 39, percentage: 97.5, grade: 'A' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', periodicTest: 18, midTermTest: 18, total: 36, percentage: 90, grade: 'A' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', periodicTest: 19, midTermTest: 19, total: 38, percentage: 95, grade: 'A' },
-      ],
-      totalScore: 190,
-      average: 95,
-      overallGrade: 'A',
-      position: 1,
-    },
-    {
-      id: '2',
-      studentName: 'Chioma Nwosu',
-      admissionNumber: 'BFO/2023/002',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', periodicTest: 18, midTermTest: 18, total: 36, percentage: 90, grade: 'A' },
-        { subject: 'English', teacher: 'Mrs. Okafor', periodicTest: 17, midTermTest: 17, total: 34, percentage: 85, grade: 'A-' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', periodicTest: 17, midTermTest: 18, total: 35, percentage: 87.5, grade: 'A-' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', periodicTest: 16, midTermTest: 17, total: 33, percentage: 82.5, grade: 'A-' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', periodicTest: 17, midTermTest: 17, total: 34, percentage: 85, grade: 'A-' },
-      ],
-      totalScore: 172,
-      average: 86,
-      overallGrade: 'A-',
-      position: 2,
-    },
-    {
-      id: '3',
-      studentName: 'Ibrahim Yusuf',
-      admissionNumber: 'BFO/2023/003',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', periodicTest: 16, midTermTest: 16, total: 32, percentage: 80, grade: 'A-' },
-        { subject: 'English', teacher: 'Mrs. Okafor', periodicTest: 15, midTermTest: 15, total: 30, percentage: 75, grade: 'B' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', periodicTest: 16, midTermTest: 15, total: 31, percentage: 77.5, grade: 'B' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', periodicTest: 15, midTermTest: 16, total: 31, percentage: 77.5, grade: 'B' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', periodicTest: 15, midTermTest: 15, total: 30, percentage: 75, grade: 'B' },
-      ],
-      totalScore: 154,
-      average: 77,
-      overallGrade: 'B',
-      position: 3,
-    },
-    {
-      id: '4',
-      studentName: 'Grace Okonkwo',
-      admissionNumber: 'BFO/2023/004',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', periodicTest: 14, midTermTest: 14, total: 28, percentage: 70, grade: 'B' },
-        { subject: 'English', teacher: 'Mrs. Okafor', periodicTest: 13, midTermTest: 14, total: 27, percentage: 67.5, grade: 'C' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', periodicTest: 14, midTermTest: 13, total: 27, percentage: 67.5, grade: 'C' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', periodicTest: 13, midTermTest: 13, total: 26, percentage: 65, grade: 'C' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', periodicTest: 14, midTermTest: 14, total: 28, percentage: 70, grade: 'B' },
-      ],
-      totalScore: 136,
-      average: 68,
-      overallGrade: 'C',
-      position: 4,
-    },
-    {
-      id: '5',
-      studentName: 'Daniel Akintola',
-      admissionNumber: 'BFO/2023/005',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', periodicTest: 12, midTermTest: 12, total: 24, percentage: 60, grade: 'C' },
-        { subject: 'English', teacher: 'Mrs. Okafor', periodicTest: 11, midTermTest: 12, total: 23, percentage: 57.5, grade: 'D' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', periodicTest: 12, midTermTest: 11, total: 23, percentage: 57.5, grade: 'D' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', periodicTest: 11, midTermTest: 11, total: 22, percentage: 55, grade: 'D' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', periodicTest: 12, midTermTest: 12, total: 24, percentage: 60, grade: 'C' },
-      ],
-      totalScore: 116,
-      average: 58,
-      overallGrade: 'D',
-      position: 5,
-    },
-  ]);
-
-  // Mock data - Term Results (aggregated from all subject teachers)
-  const [termResults] = useState<StudentTermResult[]>([
-    {
-      id: '1',
-      studentName: 'Adebayo Oluwaseun',
-      admissionNumber: 'BFO/2023/001',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', ca1: 10, ca2: 10, exam: 60, total: 80, grade: 'A-' },
-        { subject: 'English', teacher: 'Mrs. Okafor', ca1: 9, ca2: 9, exam: 58, total: 76, grade: 'B' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', ca1: 10, ca2: 10, exam: 62, total: 82, grade: 'A-' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', ca1: 9, ca2: 10, exam: 60, total: 79, grade: 'B' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', ca1: 10, ca2: 9, exam: 59, total: 78, grade: 'B' },
-      ],
-      totalScore: 395,
-      average: 79,
-      grade: 'B',
-      position: 1,
-    },
-    {
-      id: '2',
-      studentName: 'Chioma Nwosu',
-      admissionNumber: 'BFO/2023/002',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', ca1: 9, ca2: 9, exam: 55, total: 73, grade: 'B' },
-        { subject: 'English', teacher: 'Mrs. Okafor', ca1: 10, ca2: 9, exam: 56, total: 75, grade: 'B' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', ca1: 8, ca2: 9, exam: 54, total: 71, grade: 'B' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', ca1: 9, ca2: 8, exam: 55, total: 72, grade: 'B' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', ca1: 9, ca2: 9, exam: 56, total: 74, grade: 'B' },
-      ],
-      totalScore: 365,
-      average: 73,
-      grade: 'B',
-      position: 2,
-    },
-    {
-      id: '3',
-      studentName: 'Ibrahim Yusuf',
-      admissionNumber: 'BFO/2023/003',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', ca1: 8, ca2: 8, exam: 50, total: 66, grade: 'C' },
-        { subject: 'English', teacher: 'Mrs. Okafor', ca1: 7, ca2: 8, exam: 48, total: 63, grade: 'C' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', ca1: 8, ca2: 7, exam: 49, total: 64, grade: 'C' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', ca1: 7, ca2: 8, exam: 50, total: 65, grade: 'C' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', ca1: 8, ca2: 8, exam: 51, total: 67, grade: 'C' },
-      ],
-      totalScore: 325,
-      average: 65,
-      grade: 'C',
-      position: 3,
-    },
-  ]);
-
-  // Mock data - Broadsheet (aggregated from all subject teachers)
-  const [broadsheet] = useState<StudentBroadsheet[]>([
-    {
-      id: '1',
-      studentName: 'Adebayo Oluwaseun',
-      admissionNumber: 'BFO/2023/001',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', ca1: 10, ca2: 10, exam: 60, total: 80, grade: 'A-' },
-        { subject: 'English', teacher: 'Mrs. Okafor', ca1: 9, ca2: 9, exam: 58, total: 76, grade: 'B' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', ca1: 10, ca2: 10, exam: 62, total: 82, grade: 'A-' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', ca1: 9, ca2: 10, exam: 60, total: 79, grade: 'B' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', ca1: 10, ca2: 9, exam: 59, total: 78, grade: 'B' },
-        { subject: 'Economics', teacher: 'Mr. Ojo', ca1: 9, ca2: 10, exam: 61, total: 80, grade: 'A-' },
-        { subject: 'Geography', teacher: 'Mrs. Bello', ca1: 10, ca2: 9, exam: 60, total: 79, grade: 'B' },
-      ],
-      totalScore: 554,
-      average: 79.14,
-      overallGrade: 'B',
-      position: 1,
-    },
-    {
-      id: '2',
-      studentName: 'Chioma Nwosu',
-      admissionNumber: 'BFO/2023/002',
-      subjects: [
-        { subject: 'Mathematics', teacher: 'Mr. Adeyemi', ca1: 9, ca2: 9, exam: 55, total: 73, grade: 'B' },
-        { subject: 'English', teacher: 'Mrs. Okafor', ca1: 10, ca2: 9, exam: 56, total: 75, grade: 'B' },
-        { subject: 'Physics', teacher: 'Mr. Ibrahim', ca1: 8, ca2: 9, exam: 54, total: 71, grade: 'B' },
-        { subject: 'Chemistry', teacher: 'Dr. Balogun', ca1: 9, ca2: 8, exam: 55, total: 72, grade: 'B' },
-        { subject: 'Biology', teacher: 'Mrs. Adenike', ca1: 9, ca2: 9, exam: 56, total: 74, grade: 'B' },
-        { subject: 'Economics', teacher: 'Mr. Ojo', ca1: 8, ca2: 9, exam: 57, total: 74, grade: 'B' },
-        { subject: 'Geography', teacher: 'Mrs. Bello', ca1: 9, ca2: 8, exam: 55, total: 72, grade: 'B' },
-      ],
-      totalScore: 511,
-      average: 73,
-      overallGrade: 'B',
-      position: 2,
-    },
-  ]);
+  // State for class data
+  const [caResults, setCAResults] = useState<StudentCAResult[]>([]);
+  const [termResults, setTermResults] = useState<StudentTermResult[]>([]);
+  const [broadsheet, setBroadsheet] = useState<StudentBroadsheet[]>([]);
+  const [attendanceStudents, setAttendanceStudents] = useState<AttendanceStudent[]>([]);
 
   // Mock broadsheet data in BroadsheetData format for principal's broadsheet view
-  const broadsheetDataForPrincipalView: BroadsheetData[] = [
-    {
-      sn: 1,
-      studentName: 'ADEBAYO OLUWASEUN',
-      class: assignedClass,
-      passportPhoto: getStudentPhoto('ADEBAYO OLUWASEUN'),
-      english: { first: 25.5, second: 24.0, third: 26.5, total: 76.0, average: 25.33, position: 1 },
-      mathematics: { first: 28.0, second: 26.5, third: 25.5, total: 80.0, average: 26.67, position: 1 },
-      basicScience: { first: 27.0, second: 27.5, third: 27.5, total: 82.0, average: 27.33, position: 1 },
-      prevocational: { first: 26.5, second: 26.0, third: 26.5, total: 79.0, average: 26.33, position: 2 },
-      nationalValues: { first: 25.5, second: 26.0, third: 26.5, total: 78.0, average: 26.00, position: 2 },
-      totalScore: 395.0,
-      overallAverage: 79.0,
-      percentAverage: 79,
-      overallPosition: 1,
-      grade: 'B',
-      remarks: 'Excellent performance',
-    },
-    {
-      sn: 2,
-      studentName: 'CHIOMA NWOSU',
-      class: assignedClass,
-      passportPhoto: getStudentPhoto('CHIOMA NWOSU'),
-      english: { first: 25.0, second: 25.0, third: 25.0, total: 75.0, average: 25.00, position: 2 },
-      mathematics: { first: 24.0, second: 24.5, third: 24.5, total: 73.0, average: 24.33, position: 2 },
-      basicScience: { first: 23.5, second: 24.0, third: 23.5, total: 71.0, average: 23.67, position: 3 },
-      prevocational: { first: 24.0, second: 24.0, third: 24.0, total: 72.0, average: 24.00, position: 3 },
-      nationalValues: { first: 24.5, second: 24.5, third: 25.0, total: 74.0, average: 24.67, position: 3 },
-      totalScore: 365.0,
-      overallAverage: 73.0,
-      percentAverage: 73,
-      overallPosition: 2,
-      grade: 'B',
-      remarks: 'Very good effort',
-    },
-    {
-      sn: 3,
-      studentName: 'IBRAHIM YUSUF',
-      class: assignedClass,
-      passportPhoto: getStudentPhoto('IBRAHIM YUSUF'),
-      english: { first: 21.0, second: 21.0, third: 21.0, total: 63.0, average: 21.00, position: 3 },
-      mathematics: { first: 22.0, second: 22.0, third: 22.0, total: 66.0, average: 22.00, position: 3 },
-      basicScience: { first: 21.5, second: 21.0, third: 21.5, total: 64.0, average: 21.33, position: 4 },
-      prevocational: { first: 21.5, second: 22.0, third: 21.5, total: 65.0, average: 21.67, position: 4 },
-      nationalValues: { first: 22.0, second: 22.5, third: 22.5, total: 67.0, average: 22.33, position: 4 },
-      totalScore: 325.0,
-      overallAverage: 65.0,
-      percentAverage: 65,
-      overallPosition: 3,
-      grade: 'C',
-      remarks: 'Good performance',
-    },
-  ];
+  const broadsheetDataForPrincipalView: BroadsheetData[] = [];
 
   const getGrade = (percentage: number): string => {
     const gradeInfo = GRADING_SCALE.find(
@@ -547,58 +342,7 @@ export const ClassManagement: React.FC = () => {
   ];
 
   // Mock Cumulative Data
-  const [cumulativeResults] = useState<CumulativeSubjectResult[]>([
-    {
-      id: '1',
-      studentName: 'Adebayo Oluwaseun',
-      admissionNumber: 'BFO/2023/001',
-      firstTerm: 80,
-      secondTerm: 82,
-      thirdTerm: 85,
-      total: 247,
-      grade: 'A'
-    },
-    {
-      id: '2',
-      studentName: 'Chioma Nwosu',
-      admissionNumber: 'BFO/2023/002',
-      firstTerm: 73,
-      secondTerm: 75,
-      thirdTerm: 78,
-      total: 226,
-      grade: 'A-'
-    },
-    {
-      id: '3',
-      studentName: 'Ibrahim Yusuf',
-      admissionNumber: 'BFO/2023/003',
-      firstTerm: 66,
-      secondTerm: 68,
-      thirdTerm: 70,
-      total: 204,
-      grade: 'B'
-    },
-    {
-      id: '4',
-      studentName: 'Grace Okonkwo',
-      admissionNumber: 'BFO/2023/004',
-      firstTerm: 58,
-      secondTerm: 60,
-      thirdTerm: 62,
-      total: 180,
-      grade: 'C'
-    },
-    {
-      id: '5',
-      studentName: 'Daniel Akintola',
-      admissionNumber: 'BFO/2023/005',
-      firstTerm: 45,
-      secondTerm: 48,
-      thirdTerm: 50,
-      total: 143,
-      grade: 'D'
-    },
-  ]);
+  const [cumulativeResults] = useState<CumulativeSubjectResult[]>([]);
 
   const filteredCumulativeResults = cumulativeResults.filter((student) => {
     const matchesSearch =
@@ -657,35 +401,35 @@ export const ClassManagement: React.FC = () => {
   const handleGenerateReportCards = () => {
     setShowReportCardsDialog(true);
   };
-  
+
   const handleSubmitForApproval = () => {
     // Determine what we are submitting based on active tab
     const isTermSubmission = activeTab === 'term-results' || activeTab === 'broadsheet';
     const keySuffix = isTermSubmission ? '_term' : '_ca';
-    
+
     // Save submission status
     const savedStatus = localStorage.getItem('gradebook_submitted_classes');
     const statusMap = savedStatus ? JSON.parse(savedStatus) : {};
-    
+
     statusMap[`${assignedClass}${keySuffix}`] = true;
-    
+
     localStorage.setItem('gradebook_submitted_classes', JSON.stringify(statusMap));
-    
+
     // Update local state
     setSubmissionStatus(prev => ({
-        ...prev,
-        [isTermSubmission ? 'term' : 'ca']: true
+      ...prev,
+      [isTermSubmission ? 'term' : 'ca']: true
     }));
 
     setShowReportCardsDialog(false);
     toast.success(`${isTermSubmission ? 'Term' : 'CA'} Results submitted to Principal for approval`);
   };
-  
+
   // Get student for viewing in dialog based on active tab
   const getStudentForDialog = (studentId: string): BroadsheetData | null => {
     // Priority: Use synced data if available
     if (syncedBroadsheetData.length > 0) {
-      const syncedStudent = syncedBroadsheetData.find(s => 
+      const syncedStudent = syncedBroadsheetData.find(s =>
         s.studentName.toLowerCase() === caResults.find(c => c.id === studentId)?.studentName.toLowerCase() ||
         s.studentName.toLowerCase() === termResults.find(t => t.id === studentId)?.studentName.toLowerCase()
       );
@@ -701,7 +445,7 @@ export const ClassManagement: React.FC = () => {
     if (activeTab === 'ca-results') {
       const student = caResults.find((s) => s.id === studentId);
       if (!student) return null;
-      
+
       return {
         sn: student.position,
         studentName: student.studentName,
@@ -722,7 +466,7 @@ export const ClassManagement: React.FC = () => {
     } else {
       const student = termResults.find((s) => s.id === studentId);
       if (!student) return null;
-      
+
       return {
         sn: student.position,
         studentName: student.studentName,
@@ -742,7 +486,7 @@ export const ClassManagement: React.FC = () => {
       };
     }
   };
-  
+
   // Get the list of students based on current active tab
   const getStudentsList = () => {
     return activeTab === 'ca-results' ? caResults : termResults;
@@ -900,7 +644,7 @@ export const ClassManagement: React.FC = () => {
   // Helper to get subjects for report card from synced data
   const getReportCardSubjects = (studentId: string | null) => {
     if (!studentId) return undefined;
-    
+
     // Try to find in synced results first
     if (syncedTermResults.length > 0) {
       const student = syncedTermResults.find(s => s.id === studentId);
@@ -925,16 +669,16 @@ export const ClassManagement: React.FC = () => {
     // Fallback to default mock data logic if not synced
     const student = termResults.find(s => s.id === studentId);
     if (student) {
-       return student.subjects.map(sub => ({
-         subject: sub.subject.toUpperCase(),
-         ca: (sub.ca1 || 0) + (sub.ca2 || 0),
-         exam: sub.exam,
-         total: sub.total,
-         grade: sub.grade,
-         average: 70, // Mock
-         rank: "1st", // Mock
-         remark: "Good"
-       }));
+      return student.subjects.map(sub => ({
+        subject: sub.subject.toUpperCase(),
+        ca: (sub.ca1 || 0) + (sub.ca2 || 0),
+        exam: sub.exam,
+        total: sub.total,
+        grade: sub.grade,
+        average: 70, // Mock
+        rank: "1st", // Mock
+        remark: "Good"
+      }));
     }
     return undefined;
   };
@@ -949,29 +693,29 @@ export const ClassManagement: React.FC = () => {
           </h1>
           <div className="flex flex-col gap-1">
             <p className="text-sm sm:text-base text-gray-600">
-                Comprehensive Results Management for {assignedClass}
+              Comprehensive Results Management for {assignedClass}
             </p>
             <div className="flex gap-2 mt-1">
-                {submissionStatus.ca ? (
-                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 text-xs">
-                        <Check className="w-3 h-3 mr-1" />
-                        CA: Submitted
-                    </Badge>
-                ) : (
-                    <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
-                        CA: Draft
-                    </Badge>
-                )}
-                {submissionStatus.term ? (
-                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 text-xs">
-                        <Check className="w-3 h-3 mr-1" />
-                        Term: Submitted
-                    </Badge>
-                ) : (
-                    <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
-                        Term: Draft
-                    </Badge>
-                )}
+              {submissionStatus.ca ? (
+                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 text-xs">
+                  <Check className="w-3 h-3 mr-1" />
+                  CA: Submitted
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
+                  CA: Draft
+                </Badge>
+              )}
+              {submissionStatus.term ? (
+                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 text-xs">
+                  <Check className="w-3 h-3 mr-1" />
+                  Term: Submitted
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
+                  Term: Draft
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -1043,11 +787,17 @@ export const ClassManagement: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="2024/2025">2024/2025 (Ongoing)</SelectItem>
+                  {availableSessions.length > 0 ? (
+                    availableSessions.map(s => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value={selectedSession}>{selectedSession || 'Loading...'}</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
-            
+
             {activeTab !== 'broadsheet' && (
               <div>
                 <label className="text-sm font-medium mb-2 block">Term</label>
@@ -1056,9 +806,17 @@ export const ClassManagement: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="First Term">First Term</SelectItem>
-                    <SelectItem value="Second Term">Second Term</SelectItem>
-                    <SelectItem value="Third Term">Third Term</SelectItem>
+                    {availableTerms.length > 0 ? (
+                      availableTerms.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="First Term">First Term</SelectItem>
+                        <SelectItem value="Second Term">Second Term</SelectItem>
+                        <SelectItem value="Third Term">Third Term</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1207,7 +965,7 @@ export const ClassManagement: React.FC = () => {
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <CardTitle>Daily Roll Call - {assignedClass}</CardTitle>
+                      <CardTitle>Daily Roll Call - {assignedClass || 'Loading Class...'}</CardTitle>
                       <CardDescription>
                         {format(selectedDate, 'EEEE, MMMM d, yyyy')}
                       </CardDescription>
@@ -1280,11 +1038,10 @@ export const ClassManagement: React.FC = () => {
                             size="sm"
                             variant={student.status === 'present' ? 'default' : 'outline'}
                             onClick={() => handleStatusChange(student.id, 'present')}
-                            className={`flex-1 sm:flex-none ${
-                              student.status === 'present'
-                                ? 'bg-green-600 hover:bg-green-700'
-                                : ''
-                            }`}
+                            className={`flex-1 sm:flex-none ${student.status === 'present'
+                              ? 'bg-green-600 hover:bg-green-700'
+                              : ''
+                              }`}
                           >
                             <Check className="w-3 h-3 sm:mr-1" />
                             <span className="hidden sm:inline">Present</span>
@@ -1293,11 +1050,10 @@ export const ClassManagement: React.FC = () => {
                             size="sm"
                             variant={student.status === 'late' ? 'default' : 'outline'}
                             onClick={() => handleStatusChange(student.id, 'late')}
-                            className={`flex-1 sm:flex-none ${
-                              student.status === 'late'
-                                ? 'bg-amber-600 hover:bg-amber-700'
-                                : ''
-                            }`}
+                            className={`flex-1 sm:flex-none ${student.status === 'late'
+                              ? 'bg-amber-600 hover:bg-amber-700'
+                              : ''
+                              }`}
                           >
                             <Clock className="w-3 h-3 sm:mr-1" />
                             <span className="hidden sm:inline">Late</span>
@@ -1306,9 +1062,8 @@ export const ClassManagement: React.FC = () => {
                             size="sm"
                             variant={student.status === 'absent' ? 'default' : 'outline'}
                             onClick={() => handleStatusChange(student.id, 'absent')}
-                            className={`flex-1 sm:flex-none ${
-                              student.status === 'absent' ? 'bg-red-600 hover:bg-red-700' : ''
-                            }`}
+                            className={`flex-1 sm:flex-none ${student.status === 'absent' ? 'bg-red-600 hover:bg-red-700' : ''
+                              }`}
                           >
                             <X className="w-3 h-3 sm:mr-1" />
                             <span className="hidden sm:inline">Absent</span>
@@ -1417,11 +1172,11 @@ export const ClassManagement: React.FC = () => {
                   adminSignature={null}
                   principalSignature={null}
                   principalRemark=""
-                  onPrincipalRemarkChange={() => {}}
-                  onPrincipalSignatureUpload={() => {}}
-                  onRemovePrincipalSignature={() => {}}
-                  onAdminSignatureUpload={() => {}}
-                  onRemoveAdminSignature={() => {}}
+                  onPrincipalRemarkChange={() => { }}
+                  onPrincipalSignatureUpload={() => { }}
+                  onRemovePrincipalSignature={() => { }}
+                  onAdminSignatureUpload={() => { }}
+                  onRemoveAdminSignature={() => { }}
                   resultType="ca"
                   userRole="Teacher"
                   subjects={getReportCardSubjects(selectedStudent)}
@@ -1465,11 +1220,11 @@ export const ClassManagement: React.FC = () => {
                   adminSignature={null}
                   principalSignature={null}
                   principalRemark=""
-                  onPrincipalRemarkChange={() => {}}
-                  onPrincipalSignatureUpload={() => {}}
-                  onRemovePrincipalSignature={() => {}}
-                  onAdminSignatureUpload={() => {}}
-                  onRemoveAdminSignature={() => {}}
+                  onPrincipalRemarkChange={() => { }}
+                  onPrincipalSignatureUpload={() => { }}
+                  onRemovePrincipalSignature={() => { }}
+                  onAdminSignatureUpload={() => { }}
+                  onRemoveAdminSignature={() => { }}
                   resultType="term"
                   userRole="Teacher"
                   subjects={getReportCardSubjects(selectedStudent)}
@@ -1485,8 +1240,8 @@ export const ClassManagement: React.FC = () => {
             broadsheetData={syncedBroadsheetData.length > 0 ? syncedBroadsheetData : broadsheetDataForPrincipalView}
             selectedSession={selectedSession}
             selectedClass={assignedClass}
-            onSessionChange={() => {}}
-            onClassChange={() => {}}
+            onSessionChange={() => { }}
+            onClassChange={() => { }}
             showInfoBanner={true}
             showSignatures={true}
           />
@@ -1518,7 +1273,7 @@ export const ClassManagement: React.FC = () => {
                   <X className="w-4 h-4 mr-2" />
                   Back to List
                 </Button>
-                
+
                 <StudentReportCard
                   student={getStudentForDialog(viewingStudentId)!}
                   term={selectedTerm}
@@ -1528,11 +1283,11 @@ export const ClassManagement: React.FC = () => {
                   adminSignature={null}
                   principalSignature={null}
                   principalRemark=""
-                  onPrincipalRemarkChange={() => {}}
-                  onPrincipalSignatureUpload={() => {}}
-                  onRemovePrincipalSignature={() => {}}
-                  onAdminSignatureUpload={() => {}}
-                  onRemoveAdminSignature={() => {}}
+                  onPrincipalRemarkChange={() => { }}
+                  onPrincipalSignatureUpload={() => { }}
+                  onRemovePrincipalSignature={() => { }}
+                  onAdminSignatureUpload={() => { }}
+                  onRemoveAdminSignature={() => { }}
                   resultType={activeTab === 'ca-results' ? 'ca' : 'term'}
                   userRole="Teacher"
                   subjects={getReportCardSubjects(viewingStudentId)}
@@ -1582,10 +1337,10 @@ export const ClassManagement: React.FC = () => {
                                 ('grade' in student ? student.grade : student.overallGrade) === 'A' || ('grade' in student ? student.grade : student.overallGrade) === 'A-'
                                   ? 'bg-green-100 text-green-800'
                                   : ('grade' in student ? student.grade : student.overallGrade) === 'B'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : ('grade' in student ? student.grade : student.overallGrade) === 'C'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : ('grade' in student ? student.grade : student.overallGrade) === 'C'
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-red-100 text-red-800'
                               }
                             >
                               {'grade' in student ? student.grade : student.overallGrade}
@@ -1639,8 +1394,8 @@ export const ClassManagement: React.FC = () => {
             <DialogTitle>Attendance Broadsheet</DialogTitle>
             <DialogDescription>Full screen attendance broadsheet view</DialogDescription>
           </DialogHeader>
-          <AttendanceBroadsheet 
-            onClose={() => setShowAttendanceBroadsheet(false)} 
+          <AttendanceBroadsheet
+            onClose={() => setShowAttendanceBroadsheet(false)}
             classLevel={assignedClass}
           />
         </DialogContent>

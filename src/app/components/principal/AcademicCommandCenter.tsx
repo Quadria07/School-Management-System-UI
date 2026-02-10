@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { 
-  Bell, 
-  Calendar, 
-  Users, 
-  UserCheck, 
-  ClipboardCheck, 
+import React, { useState, useEffect } from 'react';
+import {
+  Bell,
+  Calendar,
+  Users,
+  UserCheck,
+  ClipboardCheck,
   Clock,
   AlertCircle,
   TrendingUp,
@@ -12,6 +12,7 @@ import {
   Plus,
   Send,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -34,6 +35,8 @@ import {
   SelectValue,
 } from '../ui/select';
 import { toast } from 'sonner';
+import { AdminAPI } from '../../../utils/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface PendingApproval {
   id: string;
@@ -61,114 +64,47 @@ interface Announcement {
 }
 
 export const AcademicCommandCenter: React.FC = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [schoolStats, setSchoolStats] = useState<any>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
   const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementContent, setAnnouncementContent] = useState('');
   const [currentPeriod, setCurrentPeriod] = useState('9:00 - 10:00 AM');
 
-  const [pendingApprovals] = useState<PendingApproval[]>([
-    {
-      id: '1',
-      type: 'lesson-note',
-      teacher: 'Mrs. Sarah Johnson',
-      subject: 'Mathematics',
-      class: 'JSS 2A',
-      submittedDate: '2 hours ago',
-    },
-    {
-      id: '2',
-      type: 'lesson-note',
-      teacher: 'Mr. David Okafor',
-      subject: 'English Language',
-      class: 'SSS 1B',
-      submittedDate: '4 hours ago',
-    },
-    {
-      id: '3',
-      type: 'result',
-      teacher: 'Dr. Amaka Peters',
-      subject: 'Chemistry',
-      class: 'SSS 3A',
-      submittedDate: '1 day ago',
-    },
-    {
-      id: '4',
-      type: 'lesson-note',
-      teacher: 'Mr. John Adebayo',
-      subject: 'Physics',
-      class: 'SSS 2A',
-      submittedDate: '1 day ago',
-    },
-  ]);
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, notesRes] = await Promise.all([
+          AdminAPI.getStats(),
+          AdminAPI.getPendingLessonNotes()
+        ]);
 
-  const [todaySchedule] = useState<TodayClass[]>([
-    // 8:00 - 9:00 AM Period
-    { time: '8:00 - 9:00 AM', subject: 'Number Work', teacher: 'Mrs. Grace Eze', class: 'KG 1', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Phonics', teacher: 'Miss Joy Okeke', class: 'KG 2', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'English Language', teacher: 'Mrs. Faith Nwankwo', class: 'Grade 1', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Mathematics', teacher: 'Mr. Peter Adeyemi', class: 'Grade 2', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Science', teacher: 'Mrs. Helen Okonkwo', class: 'Grade 3', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Social Studies', teacher: 'Mr. Daniel Ojo', class: 'Grade 4', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Mathematics', teacher: 'Mrs. Blessing Ajayi', class: 'Grade 5', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'English Language', teacher: 'Miss Victoria Bello', class: 'Grade 6', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Mathematics', teacher: 'Mrs. Sarah Johnson', class: 'JSS 1A', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'English Language', teacher: 'Mr. David Okafor', class: 'JSS 1B', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Basic Science', teacher: 'Dr. Amaka Peters', class: 'JSS 2A', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Mathematics', teacher: 'Mr. John Adebayo', class: 'JSS 2B', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Civic Education', teacher: 'Mrs. Ngozi Obi', class: 'JSS 3A', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Computer Science', teacher: 'Mr. Emmanuel Nwosu', class: 'JSS 3B', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Physics', teacher: 'Mr. Ahmed Mohammed', class: 'SSS 1A', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Chemistry', teacher: 'Dr. Chinedu Eze', class: 'SSS 1B', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Biology', teacher: 'Mrs. Aisha Bello', class: 'SSS 2A', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Economics', teacher: 'Mr. Tunde Adeyemi', class: 'SSS 2B', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Further Mathematics', teacher: 'Mrs. Funmi Oladele', class: 'SSS 3A', status: 'ongoing' },
-    { time: '8:00 - 9:00 AM', subject: 'Government', teacher: 'Mr. Ibrahim Yusuf', class: 'SSS 3B', status: 'ongoing' },
-    
-    // 9:00 - 10:00 AM Period
-    { time: '9:00 - 10:00 AM', subject: 'Rhymes & Songs', teacher: 'Mrs. Grace Eze', class: 'KG 1', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Number Work', teacher: 'Miss Joy Okeke', class: 'KG 2', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Mathematics', teacher: 'Mrs. Faith Nwankwo', class: 'Grade 1', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'English Language', teacher: 'Mr. Peter Adeyemi', class: 'Grade 2', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Social Studies', teacher: 'Mrs. Helen Okonkwo', class: 'Grade 3', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Mathematics', teacher: 'Mr. Daniel Ojo', class: 'Grade 4', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'English Language', teacher: 'Mrs. Blessing Ajayi', class: 'Grade 5', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Science', teacher: 'Miss Victoria Bello', class: 'Grade 6', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'English Language', teacher: 'Mr. David Okafor', class: 'JSS 1A', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Mathematics', teacher: 'Mrs. Sarah Johnson', class: 'JSS 1B', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Mathematics', teacher: 'Mr. John Adebayo', class: 'JSS 2A', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Basic Science', teacher: 'Dr. Amaka Peters', class: 'JSS 2B', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'English Language', teacher: 'Mr. David Okafor', class: 'JSS 3A', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Mathematics', teacher: 'Mrs. Sarah Johnson', class: 'JSS 3B', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Chemistry', teacher: 'Dr. Chinedu Eze', class: 'SSS 1A', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Physics', teacher: 'Mr. Ahmed Mohammed', class: 'SSS 1B', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Mathematics', teacher: 'Mrs. Funmi Oladele', class: 'SSS 2A', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'English Language', teacher: 'Mr. David Okafor', class: 'SSS 2B', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Physics', teacher: 'Mr. Ahmed Mohammed', class: 'SSS 3A', status: 'upcoming' },
-    { time: '9:00 - 10:00 AM', subject: 'Literature in English', teacher: 'Mrs. Mercy Adewale', class: 'SSS 3B', status: 'upcoming' },
-    
-    // 10:00 - 11:00 AM Period
-    { time: '10:00 - 11:00 AM', subject: 'Play Time', teacher: 'Mrs. Grace Eze', class: 'KG 1', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Creative Arts', teacher: 'Miss Joy Okeke', class: 'KG 2', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Creative Arts', teacher: 'Mrs. Faith Nwankwo', class: 'Grade 1', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Basic Science', teacher: 'Mr. Peter Adeyemi', class: 'Grade 2', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'English Language', teacher: 'Mrs. Helen Okonkwo', class: 'Grade 3', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Computer Studies', teacher: 'Mr. Emmanuel Nwosu', class: 'Grade 4', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Creative Arts', teacher: 'Mrs. Blessing Ajayi', class: 'Grade 5', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'History', teacher: 'Mr. Ibrahim Yusuf', class: 'Grade 6', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Basic Technology', teacher: 'Mr. Emmanuel Nwosu', class: 'JSS 1A', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'French Language', teacher: 'Mme. Francoise Dubois', class: 'JSS 1B', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Physical Education', teacher: 'Coach Samuel Okon', class: 'JSS 2A', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Agricultural Science', teacher: 'Mr. Benson Uche', class: 'JSS 2B', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Business Studies', teacher: 'Mrs. Comfort Ezeh', class: 'JSS 3A', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Home Economics', teacher: 'Mrs. Patience Nnamani', class: 'JSS 3B', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'English Language', teacher: 'Mr. David Okafor', class: 'SSS 1A', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Biology', teacher: 'Mrs. Aisha Bello', class: 'SSS 1B', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Chemistry', teacher: 'Dr. Chinedu Eze', class: 'SSS 2A', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Commerce', teacher: 'Mrs. Comfort Ezeh', class: 'SSS 2B', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'English Language', teacher: 'Mr. David Okafor', class: 'SSS 3A', status: 'upcoming' },
-    { time: '10:00 - 11:00 AM', subject: 'Agricultural Science', teacher: 'Mr. Benson Uche', class: 'SSS 3B', status: 'upcoming' },
-  ]);
+        if (statsRes.status === 'success') setSchoolStats(statsRes.data);
+        if (notesRes.status === 'success') {
+          const notesData = (notesRes.data || []) as any[];
+          setPendingApprovals(notesData.map(n => ({
+            id: n.id,
+            type: 'lesson-note',
+            teacher: n.teacher_name,
+            subject: n.subject_name,
+            class: n.class_name,
+            submittedDate: 'Recently'
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching principal data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
+  const [todaySchedule] = useState<TodayClass[]>([]);
   const lessonPeriods = [
     '8:00 - 9:00 AM',
     '9:00 - 10:00 AM',
@@ -179,31 +115,7 @@ export const AcademicCommandCenter: React.FC = () => {
 
   const currentClasses = todaySchedule.filter((cls) => cls.time === currentPeriod);
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>([
-    {
-      id: '1',
-      title: 'Staff Meeting Tomorrow',
-      content: 'All teachers are required to attend the staff meeting tomorrow at 2:00 PM in the conference room.',
-      date: '2 hours ago',
-      author: 'Principal',
-    },
-    {
-      id: '2',
-      title: 'Midterm Break Schedule',
-      content: 'The midterm break will commence on January 15th. Please ensure all lesson notes are submitted before the break.',
-      date: '1 day ago',
-      author: 'Principal',
-    },
-  ]);
-
-  const stats = {
-    studentsTotal: 1250,
-    studentsPresent: 1198,
-    studentsAbsent: 52,
-    staffTotal: 75,
-    staffPresent: 72,
-    staffAbsent: 3,
-  };
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const handlePostAnnouncement = () => {
     if (!announcementTitle.trim() || !announcementContent.trim()) {
@@ -232,7 +144,7 @@ export const AcademicCommandCenter: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl mb-2 text-blue-950">Academic Command Center</h1>
-          <p className="text-sm sm:text-base text-gray-600">Daily Operations Dashboard - Monday, December 29, 2025</p>
+          <p className="text-sm sm:text-base text-gray-600">Daily Operations Dashboard - {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <Button onClick={() => setShowAnnouncementDialog(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
@@ -240,97 +152,107 @@ export const AcademicCommandCenter: React.FC = () => {
         </Button>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-gray-600">Loading principal dashboard...</span>
+        </div>
+      )}
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Pending Approvals
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl text-blue-950">{pendingApprovals.length}</p>
-                <p className="text-xs text-gray-500 mt-1">Requires your review</p>
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Pending Approvals
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl text-blue-950">{pendingApprovals.length}</p>
+                  <p className="text-xs text-gray-500 mt-1">Requires your review</p>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <ClipboardCheck className="w-6 h-6 text-amber-600" />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                <ClipboardCheck className="w-6 h-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Students Today
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl text-blue-950">
-                  {stats.studentsPresent}/{stats.studentsTotal}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stats.studentsAbsent} absent
-                </p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Students Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl text-blue-950">
+                    {schoolStats?.total_students || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Total Enrolled
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Staff Today
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl text-blue-950">
-                  {stats.staffPresent}/{stats.staffTotal}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stats.staffAbsent} absent
-                </p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Staff Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl text-blue-950">
+                    {schoolStats?.total_teachers || 0}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Active Teachers
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <UserCheck className="w-6 h-6 text-green-600" />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <UserCheck className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Attendance Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-3xl text-blue-950">
-                  {Math.round((stats.studentsPresent / stats.studentsTotal) * 100)}%
-                </p>
-                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  +2% vs yesterday
-                </p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Active Classes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl text-blue-950">
+                    {schoolStats?.total_classes || 0}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    Across levels
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-6 h-6 text-purple-600" />
+                </div>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

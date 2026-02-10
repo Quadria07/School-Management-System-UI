@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { TeacherAPI } from '../../../utils/api';
 import {
   Plus,
   Trash2,
@@ -55,6 +56,7 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+// @ts-ignore
 import schoolLogo from 'figma:asset/05e5dcd127c3f9119091f655ee2db41390342c66.png';
 
 interface Question {
@@ -92,346 +94,38 @@ export const CBTAssessmentBuilder: React.FC = () => {
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterType, setFilterType] = useState('all');
 
-  // Sample Assessments Library with more data
-  const [assessmentLibrary] = useState<Assessment[]>([
-    // DRAFTS
-    {
-      id: 'assessment-draft-1',
-      title: 'Mid-Term Physics Test',
-      assessmentType: 'mid-term-test',
-      subject: 'Physics',
-      class: 'SSS 2A',
-      timeLimit: 45,
-      totalMarks: 50,
-      shuffleQuestions: true,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'State Newton\'s First Law of Motion',
-          questionType: 'theory',
-          options: [],
-          correctAnswer: '',
-          marks: 10,
-          status: 'ready',
-        },
-        {
-          id: 'q2',
-          questionText: 'What is acceleration?',
-          questionType: 'multiple-choice',
-          options: ['Rate of change of velocity', 'Rate of change of distance', 'Rate of change of speed', 'Rate of change of time'],
-          correctAnswer: 0,
-          marks: 5,
-          status: 'ready',
-        },
-      ],
-      status: 'draft',
-      createdAt: new Date('2024-12-28'),
-    },
-    {
-      id: 'assessment-draft-2',
-      title: 'Chemistry Practical Quiz',
-      assessmentType: 'quiz',
-      subject: 'Chemistry',
-      class: 'SSS 1A',
-      timeLimit: 30,
-      totalMarks: 30,
-      shuffleQuestions: false,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'What is the chemical symbol for Gold?',
-          questionType: 'multiple-choice',
-          options: ['Au', 'Ag', 'Go', 'Gd'],
-          correctAnswer: 0,
-          marks: 3,
-          status: 'ready',
-        },
-      ],
-      status: 'draft',
-      createdAt: new Date('2024-12-30'),
-    },
-    {
-      id: 'assessment-draft-3',
-      title: 'English Grammar Diagnostic Test',
-      assessmentType: 'mid-term-test',
-      subject: 'English Language',
-      class: 'JSS 2A',
-      timeLimit: 40,
-      totalMarks: 40,
-      shuffleQuestions: true,
-      deliveryMode: 'paper',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'Identify the verb in this sentence: The cat sleeps.',
-          questionType: 'multiple-choice',
-          options: ['cat', 'sleeps', 'the', 'sentence'],
-          correctAnswer: 1,
-          marks: 2,
-          status: 'ready',
-        },
-      ],
-      status: 'draft',
-      createdAt: new Date('2024-12-29'),
-    },
-    
-    // SCHEDULED/PUBLISHED
-    {
-      id: 'assessment-pub-1',
-      title: 'First Term Mathematics Examination',
-      assessmentType: 'termly-exam',
-      subject: 'Mathematics',
-      class: 'JSS 3A',
-      timeLimit: 60,
-      totalMarks: 100,
-      shuffleQuestions: true,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'What is the solution to x² - 5x + 6 = 0?',
-          questionType: 'multiple-choice',
-          options: ['x = 2, 3', 'x = 1, 6', 'x = -2, -3', 'x = 0, 5'],
-          correctAnswer: 0,
-          marks: 5,
-          status: 'ready',
-        },
-        {
-          id: 'q2',
-          questionText: 'Simplify: 3x + 5x',
-          questionType: 'multiple-choice',
-          options: ['8x', '8x²', '15x', '3x²'],
-          correctAnswer: 0,
-          marks: 3,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-12-15'),
-    },
-    {
-      id: 'assessment-pub-2',
-      title: 'Biology Mid-Term Exam',
-      assessmentType: 'mid-term-test',
-      subject: 'Biology',
-      class: 'SSS 3A',
-      timeLimit: 50,
-      totalMarks: 60,
-      shuffleQuestions: true,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'What is photosynthesis?',
-          questionType: 'theory',
-          options: [],
-          correctAnswer: '',
-          marks: 10,
-          status: 'ready',
-        },
-        {
-          id: 'q2',
-          questionText: 'Plants produce oxygen during photosynthesis',
-          questionType: 'true-false',
-          options: ['True', 'False'],
-          correctAnswer: 0,
-          marks: 2,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-12-20'),
-    },
-    {
-      id: 'assessment-pub-3',
-      title: 'Computer Science Programming Quiz',
-      assessmentType: 'quiz',
-      subject: 'Computer Science',
-      class: 'SSS 2A',
-      timeLimit: 25,
-      totalMarks: 25,
-      shuffleQuestions: false,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'What does HTML stand for?',
-          questionType: 'multiple-choice',
-          options: ['Hyper Text Markup Language', 'High Tech Modern Language', 'Home Tool Markup Language', 'Hyperlinks and Text Markup Language'],
-          correctAnswer: 0,
-          marks: 5,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-12-22'),
-    },
-    {
-      id: 'assessment-pub-4',
-      title: 'Further Mathematics Terminal Exam',
-      assessmentType: 'termly-exam',
-      subject: 'Further Mathematics',
-      class: 'SSS 3A',
-      timeLimit: 90,
-      totalMarks: 100,
-      shuffleQuestions: true,
-      deliveryMode: 'paper',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'Solve for x: 2x² + 5x - 3 = 0',
-          questionType: 'theory',
-          options: [],
-          correctAnswer: '',
-          marks: 15,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-12-18'),
-    },
-    
-    // ARCHIVED (older than 30 days)
-    {
-      id: 'assessment-arch-1',
-      title: 'English Language Grammar Quiz',
-      assessmentType: 'quiz',
-      subject: 'English Language',
-      class: 'JSS 1A',
-      timeLimit: 20,
-      totalMarks: 20,
-      shuffleQuestions: false,
-      deliveryMode: 'paper',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'The cat is sleeping.',
-          questionType: 'true-false',
-          options: ['True', 'False'],
-          correctAnswer: 0,
-          marks: 2,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-11-20'),
-    },
-    {
-      id: 'assessment-arch-2',
-      title: 'Second Term Chemistry Exam',
-      assessmentType: 'termly-exam',
-      subject: 'Chemistry',
-      class: 'SSS 2A',
-      timeLimit: 75,
-      totalMarks: 100,
-      shuffleQuestions: true,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'Define oxidation and reduction',
-          questionType: 'theory',
-          options: [],
-          correctAnswer: '',
-          marks: 10,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-10-15'),
-    },
-    {
-      id: 'assessment-arch-3',
-      title: 'Physics Mechanics Test',
-      assessmentType: 'mid-term-test',
-      subject: 'Physics',
-      class: 'SSS 1A',
-      timeLimit: 45,
-      totalMarks: 50,
-      shuffleQuestions: true,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'Calculate the velocity of a car that travels 100m in 10 seconds',
-          questionType: 'theory',
-          options: [],
-          correctAnswer: '',
-          marks: 8,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-11-05'),
-    },
-    {
-      id: 'assessment-arch-4',
-      title: 'Mathematics Algebra Quiz',
-      assessmentType: 'quiz',
-      subject: 'Mathematics',
-      class: 'JSS 3A',
-      timeLimit: 30,
-      totalMarks: 30,
-      shuffleQuestions: false,
-      deliveryMode: 'cbt',
-      questions: [
-        {
-          id: 'q1',
-          questionText: 'Simplify: 2(x + 3)',
-          questionType: 'multiple-choice',
-          options: ['2x + 6', '2x + 3', 'x + 6', '2x + 9'],
-          correctAnswer: 0,
-          marks: 3,
-          status: 'ready',
-        },
-      ],
-      status: 'published',
-      createdAt: new Date('2024-10-28'),
-    },
-  ]);
+  const [loading, setLoading] = useState(false);
+  const [assessmentLibrary, setAssessmentLibrary] = useState<Assessment[]>([]);
+
+  useEffect(() => {
+    const fetchAssessments = async () => {
+      setLoading(true);
+      try {
+        const res = await TeacherAPI.getAssessments();
+        if (res.status === 'success' && res.data) {
+          setAssessmentLibrary(res.data as Assessment[]);
+        }
+      } catch (error) {
+        console.error('Error fetching assessments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssessments();
+  }, []);
 
   // Assessment State
   const [assessment, setAssessment] = useState<Assessment>({
-    id: 'assessment-1',
-    title: 'First Term Mathematics Examination',
-    assessmentType: 'termly-exam',
-    subject: 'Mathematics',
-    class: 'JSS 3A',
+    id: 'new-assessment',
+    title: '',
+    assessmentType: 'quiz',
+    subject: '',
+    class: '',
     timeLimit: 60,
-    totalMarks: 100,
+    totalMarks: 0,
     shuffleQuestions: true,
-    deliveryMode: 'cbt', // Add delivery mode
-    questions: [
-      {
-        id: 'q1',
-        questionText: 'What is the solution to x² - 5x + 6 = 0?',
-        questionType: 'multiple-choice',
-        options: ['x = 2, 3', 'x = 1, 6', 'x = -2, -3', 'x = 0, 5'],
-        correctAnswer: 0,
-        marks: 5,
-        status: 'ready',
-      },
-      {
-        id: 'q2',
-        questionText: 'Simplify: 3x + 5x',
-        questionType: 'multiple-choice',
-        options: ['8x', '8x', '15x', '3x²'],
-        correctAnswer: 0,
-        marks: 3,
-        status: 'ready',
-      },
-      {
-        id: 'q3',
-        questionText: '',
-        questionType: 'multiple-choice',
-        options: ['', '', '', ''],
-        correctAnswer: 0,
-        marks: 5,
-        status: 'draft',
-      },
-    ],
+    deliveryMode: 'cbt',
+    questions: [],
     status: 'draft',
     createdAt: new Date(),
   });
@@ -628,21 +322,19 @@ export const CBTAssessmentBuilder: React.FC = () => {
                 <button
                   key={question.id}
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`w-full flex items-center justify-between p-3 mb-1 rounded-lg transition-all ${
-                    currentQuestionIndex === index
-                      ? 'bg-blue-100 border-2 border-blue-500'
-                      : 'hover:bg-gray-100 border-2 border-transparent'
-                  }`}
+                  className={`w-full flex items-center justify-between p-3 mb-1 rounded-lg transition-all ${currentQuestionIndex === index
+                    ? 'bg-blue-100 border-2 border-blue-500'
+                    : 'hover:bg-gray-100 border-2 border-transparent'
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                        currentQuestionIndex === index
-                          ? 'bg-blue-600 text-white'
-                          : question.status === 'ready'
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${currentQuestionIndex === index
+                        ? 'bg-blue-600 text-white'
+                        : question.status === 'ready'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-gray-200 text-gray-600'
-                      }`}
+                        }`}
                     >
                       {index + 1}
                     </div>
@@ -858,52 +550,46 @@ export const CBTAssessmentBuilder: React.FC = () => {
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         onClick={() => updateQuestionType('multiple-choice')}
-                        className={`p-4 border-2 rounded-lg transition-all ${
-                          currentQuestion.questionType === 'multiple-choice'
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-4 border-2 rounded-lg transition-all ${currentQuestion.questionType === 'multiple-choice'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <CheckCircle2
-                          className={`w-6 h-6 mx-auto mb-2 ${
-                            currentQuestion.questionType === 'multiple-choice'
-                              ? 'text-blue-600'
-                              : 'text-gray-400'
-                          }`}
+                          className={`w-6 h-6 mx-auto mb-2 ${currentQuestion.questionType === 'multiple-choice'
+                            ? 'text-blue-600'
+                            : 'text-gray-400'
+                            }`}
                         />
                         <p className="text-sm font-medium">Multiple Choice</p>
                       </button>
                       <button
                         onClick={() => updateQuestionType('true-false')}
-                        className={`p-4 border-2 rounded-lg transition-all ${
-                          currentQuestion.questionType === 'true-false'
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-4 border-2 rounded-lg transition-all ${currentQuestion.questionType === 'true-false'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <CheckCircle
-                          className={`w-6 h-6 mx-auto mb-2 ${
-                            currentQuestion.questionType === 'true-false'
-                              ? 'text-blue-600'
-                              : 'text-gray-400'
-                          }`}
+                          className={`w-6 h-6 mx-auto mb-2 ${currentQuestion.questionType === 'true-false'
+                            ? 'text-blue-600'
+                            : 'text-gray-400'
+                            }`}
                         />
                         <p className="text-sm font-medium">True/False</p>
                       </button>
                       <button
                         onClick={() => updateQuestionType('theory')}
-                        className={`p-4 border-2 rounded-lg transition-all ${
-                          currentQuestion.questionType === 'theory'
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`p-4 border-2 rounded-lg transition-all ${currentQuestion.questionType === 'theory'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         <FileQuestion
-                          className={`w-6 h-6 mx-auto mb-2 ${
-                            currentQuestion.questionType === 'theory'
-                              ? 'text-blue-600'
-                              : 'text-gray-400'
-                          }`}
+                          className={`w-6 h-6 mx-auto mb-2 ${currentQuestion.questionType === 'theory'
+                            ? 'text-blue-600'
+                            : 'text-gray-400'
+                            }`}
                         />
                         <p className="text-sm font-medium">Theory</p>
                       </button>
@@ -962,11 +648,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                         {currentQuestion.options.map((option, index) => (
                           <div
                             key={index}
-                            className={`flex items-center gap-3 p-3 border-2 rounded-lg ${
-                              currentQuestion.correctAnswer === index
-                                ? 'border-green-500 bg-green-50'
-                                : 'border-gray-200'
-                            }`}
+                            className={`flex items-center gap-3 p-3 border-2 rounded-lg ${currentQuestion.correctAnswer === index
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-gray-200'
+                              }`}
                           >
                             <RadioGroupItem
                               value={index.toString()}
@@ -1265,11 +950,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                         {/* Icon */}
                         <div className="flex-shrink-0">
                           <div
-                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${
-                              assessment.assessmentType === 'termly-exam'
-                                ? 'bg-amber-100'
-                                : 'bg-blue-100'
-                            }`}
+                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${assessment.assessmentType === 'termly-exam'
+                              ? 'bg-amber-100'
+                              : 'bg-blue-100'
+                              }`}
                           >
                             {assessment.assessmentType === 'termly-exam' ? (
                               <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" />
@@ -1298,11 +982,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                                 </Badge>
                                 <Badge
                                   variant="outline"
-                                  className={`text-xs ${
-                                    assessment.deliveryMode === 'cbt'
-                                      ? 'bg-blue-50 text-blue-700'
-                                      : 'bg-gray-50 text-gray-700'
-                                  }`}
+                                  className={`text-xs ${assessment.deliveryMode === 'cbt'
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'bg-gray-50 text-gray-700'
+                                    }`}
                                 >
                                   {assessment.deliveryMode === 'cbt' ? 'CBT' : 'Paper'}
                                 </Badge>
@@ -1401,11 +1084,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                         {/* Icon */}
                         <div className="flex-shrink-0">
                           <div
-                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${
-                              assessment.assessmentType === 'termly-exam'
-                                ? 'bg-amber-100'
-                                : 'bg-blue-100'
-                            }`}
+                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${assessment.assessmentType === 'termly-exam'
+                              ? 'bg-amber-100'
+                              : 'bg-blue-100'
+                              }`}
                           >
                             {assessment.assessmentType === 'termly-exam' ? (
                               <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" />
@@ -1434,11 +1116,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                                 </Badge>
                                 <Badge
                                   variant="outline"
-                                  className={`text-xs ${
-                                    assessment.deliveryMode === 'cbt'
-                                      ? 'bg-blue-50 text-blue-700'
-                                      : 'bg-gray-50 text-gray-700'
-                                  }`}
+                                  className={`text-xs ${assessment.deliveryMode === 'cbt'
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'bg-gray-50 text-gray-700'
+                                    }`}
                                 >
                                   {assessment.deliveryMode === 'cbt' ? 'CBT' : 'Paper'}
                                 </Badge>
@@ -1508,14 +1189,14 @@ export const CBTAssessmentBuilder: React.FC = () => {
                   a.status === 'published' &&
                   new Date().getTime() - a.createdAt.getTime() < 30 * 24 * 60 * 60 * 1000
               ).length === 0 && (
-                <div className="text-center py-12 bg-white rounded-lg border">
-                  <PlayCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Assessments</h3>
-                  <p className="text-gray-500 mb-4">
-                    Publish a draft assessment to make it available to students
-                  </p>
-                </div>
-              )}
+                  <div className="text-center py-12 bg-white rounded-lg border">
+                    <PlayCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Assessments</h3>
+                    <p className="text-gray-500 mb-4">
+                      Publish a draft assessment to make it available to students
+                    </p>
+                  </div>
+                )}
             </TabsContent>
 
             {/* Archived Tab */}
@@ -1537,11 +1218,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                         {/* Icon */}
                         <div className="flex-shrink-0">
                           <div
-                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${
-                              assessment.assessmentType === 'termly-exam'
-                                ? 'bg-gray-200'
-                                : 'bg-gray-200'
-                            }`}
+                            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-lg flex items-center justify-center ${assessment.assessmentType === 'termly-exam'
+                              ? 'bg-gray-200'
+                              : 'bg-gray-200'
+                              }`}
                           >
                             {assessment.assessmentType === 'termly-exam' ? (
                               <Shield className="w-6 h-6 sm:w-7 sm:h-7 text-gray-600" />
@@ -1570,11 +1250,10 @@ export const CBTAssessmentBuilder: React.FC = () => {
                                 </Badge>
                                 <Badge
                                   variant="outline"
-                                  className={`text-xs ${
-                                    assessment.deliveryMode === 'cbt'
-                                      ? 'bg-blue-50 text-blue-700'
-                                      : 'bg-gray-50 text-gray-700'
-                                  }`}
+                                  className={`text-xs ${assessment.deliveryMode === 'cbt'
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'bg-gray-50 text-gray-700'
+                                    }`}
                                 >
                                   {assessment.deliveryMode === 'cbt' ? 'CBT' : 'Paper'}
                                 </Badge>
@@ -1645,14 +1324,14 @@ export const CBTAssessmentBuilder: React.FC = () => {
                   a.status === 'published' &&
                   new Date().getTime() - a.createdAt.getTime() >= 30 * 24 * 60 * 60 * 1000
               ).length === 0 && (
-                <div className="text-center py-12 bg-white rounded-lg border">
-                  <Archive className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Archived Assessments</h3>
-                  <p className="text-gray-500">
-                    Assessments older than 30 days will appear here
-                  </p>
-                </div>
-              )}
+                  <div className="text-center py-12 bg-white rounded-lg border">
+                    <Archive className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Archived Assessments</h3>
+                    <p className="text-gray-500">
+                      Assessments older than 30 days will appear here
+                    </p>
+                  </div>
+                )}
             </TabsContent>
           </Tabs>
         </div>
@@ -1667,279 +1346,279 @@ export const CBTAssessmentBuilder: React.FC = () => {
               Preview how the assessment will appear to students
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Scrollable Content Area */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50">
 
-          {/* Professional Exam Paper Layout */}
-          <div className="bg-white p-8 sm:p-10 lg:p-12 w-full max-w-[1400px] mx-auto shadow-lg my-6">
-            {/* School Header - Matching Report Card Style */}
-            <div className="border-2 border-blue-950 p-3 sm:p-4 mb-4">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
-                {/* School Logo */}
-                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 flex items-center justify-center flex-shrink-0">
-                  <img
-                    src={schoolLogo}
-                    alt="BFOIA Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+            {/* Professional Exam Paper Layout */}
+            <div className="bg-white p-8 sm:p-10 lg:p-12 w-full max-w-[1400px] mx-auto shadow-lg my-6">
+              {/* School Header - Matching Report Card Style */}
+              <div className="border-2 border-blue-950 p-3 sm:p-4 mb-4">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
+                  {/* School Logo */}
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 flex items-center justify-center flex-shrink-0">
+                    <img
+                      src={schoolLogo}
+                      alt="BFOIA Logo"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
 
-                {/* School Info */}
-                <div className="flex-1 text-center">
-                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-950 mb-1">
-                    BISHOP FELIX OWOLABI INT'L ACADEMY
-                  </h1>
-                  <p className="text-xs sm:text-sm text-gray-700 mb-0.5">
-                    1, Faithtriumph Drive, Behind Galaxy Hotel, West Bye Pass, Ring Road, Osogbo, Osun State
-                  </p>
-                  <p className="text-xs sm:text-sm font-semibold text-blue-900">
-                    MOTTO ..... learning for an Exceptional Nation
-                  </p>
+                  {/* School Info */}
+                  <div className="flex-1 text-center">
+                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-950 mb-1">
+                      BISHOP FELIX OWOLABI INT'L ACADEMY
+                    </h1>
+                    <p className="text-xs sm:text-sm text-gray-700 mb-0.5">
+                      1, Faithtriumph Drive, Behind Galaxy Hotel, West Bye Pass, Ring Road, Osogbo, Osun State
+                    </p>
+                    <p className="text-xs sm:text-sm font-semibold text-blue-900">
+                      MOTTO ..... learning for an Exceptional Nation
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Title Section */}
-            <div className="border border-gray-400 mb-4">
-              <div className="bg-gray-200 p-2 text-center">
-                <h2 className="text-base sm:text-lg font-bold text-blue-950">
-                  {assessment.assessmentType === 'mid-term-test'
-                    ? 'MID-TERM ASSESSMENT TEST'
-                    : assessment.assessmentType === 'termly-exam'
-                    ? 'TERMINAL EXAMINATION'
-                    : 'CLASS QUIZ'}
-                </h2>
+              {/* Title Section */}
+              <div className="border border-gray-400 mb-4">
+                <div className="bg-gray-200 p-2 text-center">
+                  <h2 className="text-base sm:text-lg font-bold text-blue-950">
+                    {assessment.assessmentType === 'mid-term-test'
+                      ? 'MID-TERM ASSESSMENT TEST'
+                      : assessment.assessmentType === 'termly-exam'
+                        ? 'TERMINAL EXAMINATION'
+                        : 'CLASS QUIZ'}
+                  </h2>
+                </div>
               </div>
-            </div>
 
-            {/* Assessment Information - Matching Report Card Table Style */}
-            <div className="border border-gray-400 mb-4 overflow-x-auto">
-              <table className="w-full">
-                <tbody>
-                  <tr>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm w-1/4">
-                      SUBJECT:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
-                      {assessment.subject}
-                    </td>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm w-1/4">
-                      CLASS:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
-                      {assessment.class}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
-                      TIME ALLOWED:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
-                      {assessment.timeLimit} Minutes
-                    </td>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
-                      TOTAL MARKS:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
-                      {calculateTotalMarks()} Marks
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
-                      STUDENT NAME:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm">
-                      {assessment.deliveryMode === 'cbt' ? (
-                        <span className="font-medium text-blue-950">Ademola Olamide Johnson</span>
-                      ) : (
-                        <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
-                      )}
-                    </td>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
-                      ADMISSION NO:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm">
-                      {assessment.deliveryMode === 'cbt' ? (
-                        <span className="font-medium text-blue-950">BFOIA/2023/0145</span>
-                      ) : (
-                        <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
-                      DATE:
-                    </td>
-                    <td className="border border-gray-400 p-2 text-xs sm:text-sm">
-                      {assessment.deliveryMode === 'cbt' ? (
-                        <span className="font-medium text-blue-950">
-                          {new Date().toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </span>
-                      ) : (
-                        <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
-                      )}
-                    </td>
-                    {assessment.deliveryMode === 'paper' && (
-                      <>
-                        <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
-                          SIGNATURE:
-                        </td>
-                        <td className="border border-gray-400 p-2 text-xs sm:text-sm">
-                          <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
-                        </td>
-                      </>
-                    )}
-                    {assessment.deliveryMode === 'cbt' && (
-                      <td
-                        colSpan={2}
-                        className="border border-gray-400 p-2 bg-blue-50 text-xs text-center italic text-blue-700"
-                      >
-                        Computer-Based Test - Auto-filled on Login
+              {/* Assessment Information - Matching Report Card Table Style */}
+              <div className="border border-gray-400 mb-4 overflow-x-auto">
+                <table className="w-full">
+                  <tbody>
+                    <tr>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm w-1/4">
+                        SUBJECT:
                       </td>
-                    )}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Instructions Section */}
-            <div className="border border-gray-400 mb-4">
-              <div className="bg-blue-950 p-2">
-                <h3 className="font-bold text-white text-xs sm:text-sm">INSTRUCTIONS TO CANDIDATES:</h3>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
+                        {assessment.subject}
+                      </td>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm w-1/4">
+                        CLASS:
+                      </td>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
+                        {assessment.class}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
+                        TIME ALLOWED:
+                      </td>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
+                        {assessment.timeLimit} Minutes
+                      </td>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
+                        TOTAL MARKS:
+                      </td>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm font-medium text-blue-950">
+                        {calculateTotalMarks()} Marks
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
+                        STUDENT NAME:
+                      </td>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm">
+                        {assessment.deliveryMode === 'cbt' ? (
+                          <span className="font-medium text-blue-950">Ademola Olamide Johnson</span>
+                        ) : (
+                          <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
+                        )}
+                      </td>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
+                        ADMISSION NO:
+                      </td>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm">
+                        {assessment.deliveryMode === 'cbt' ? (
+                          <span className="font-medium text-blue-950">BFOIA/2023/0145</span>
+                        ) : (
+                          <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
+                        DATE:
+                      </td>
+                      <td className="border border-gray-400 p-2 text-xs sm:text-sm">
+                        {assessment.deliveryMode === 'cbt' ? (
+                          <span className="font-medium text-blue-950">
+                            {new Date().toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        ) : (
+                          <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
+                        )}
+                      </td>
+                      {assessment.deliveryMode === 'paper' && (
+                        <>
+                          <td className="border border-gray-400 p-2 bg-gray-100 font-semibold text-xs sm:text-sm">
+                            SIGNATURE:
+                          </td>
+                          <td className="border border-gray-400 p-2 text-xs sm:text-sm">
+                            <div className="border-b-2 border-dotted border-gray-400 h-5"></div>
+                          </td>
+                        </>
+                      )}
+                      {assessment.deliveryMode === 'cbt' && (
+                        <td
+                          colSpan={2}
+                          className="border border-gray-400 p-2 bg-blue-50 text-xs text-center italic text-blue-700"
+                        >
+                          Computer-Based Test - Auto-filled on Login
+                        </td>
+                      )}
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div className="p-3 border-t border-gray-400">
-                <ol className="list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-gray-800">
-                  <li>Answer all questions in the spaces provided on this question paper.</li>
-                  <li>Read each question carefully before attempting your answer.</li>
-                  <li>For multiple-choice questions, shade or tick the correct option clearly.</li>
-                  <li>For theory questions, write your answers clearly and legibly.</li>
-                  <li>You have <strong>{assessment.timeLimit} minutes</strong> to complete this assessment.</li>
-                  <li>Do not communicate with other candidates during the examination.</li>
-                  <li>Electronic devices (phones, calculators, smartwatches) are strictly prohibited unless specified.</li>
-                  <li>Show all workings for mathematical calculations where applicable.</li>
-                  <li>Any form of examination malpractice will lead to automatic cancellation of results.</li>
-                </ol>
-              </div>
-            </div>
 
-            {/* Questions Section */}
-            <div className="border border-gray-400 mb-4">
-              <div className="bg-gray-200 p-2 border-b border-gray-400">
-                <h2 className="text-sm sm:text-base font-bold text-blue-950 text-center">
-                  EXAMINATION QUESTIONS
-                </h2>
+              {/* Instructions Section */}
+              <div className="border border-gray-400 mb-4">
+                <div className="bg-blue-950 p-2">
+                  <h3 className="font-bold text-white text-xs sm:text-sm">INSTRUCTIONS TO CANDIDATES:</h3>
+                </div>
+                <div className="p-3 border-t border-gray-400">
+                  <ol className="list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-gray-800">
+                    <li>Answer all questions in the spaces provided on this question paper.</li>
+                    <li>Read each question carefully before attempting your answer.</li>
+                    <li>For multiple-choice questions, shade or tick the correct option clearly.</li>
+                    <li>For theory questions, write your answers clearly and legibly.</li>
+                    <li>You have <strong>{assessment.timeLimit} minutes</strong> to complete this assessment.</li>
+                    <li>Do not communicate with other candidates during the examination.</li>
+                    <li>Electronic devices (phones, calculators, smartwatches) are strictly prohibited unless specified.</li>
+                    <li>Show all workings for mathematical calculations where applicable.</li>
+                    <li>Any form of examination malpractice will lead to automatic cancellation of results.</li>
+                  </ol>
+                </div>
               </div>
 
-              <div className="p-4 space-y-6">
-                {assessment.questions
-                  .filter((q) => q.status === 'ready')
-                  .map((question, index) => (
-                    <div key={question.id} className="space-y-3">
-                      {/* Question Header */}
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-950 text-white flex items-center justify-center font-bold text-sm">
-                            {index + 1}
+              {/* Questions Section */}
+              <div className="border border-gray-400 mb-4">
+                <div className="bg-gray-200 p-2 border-b border-gray-400">
+                  <h2 className="text-sm sm:text-base font-bold text-blue-950 text-center">
+                    EXAMINATION QUESTIONS
+                  </h2>
+                </div>
+
+                <div className="p-4 space-y-6">
+                  {assessment.questions
+                    .filter((q) => q.status === 'ready')
+                    .map((question, index) => (
+                      <div key={question.id} className="space-y-3">
+                        {/* Question Header */}
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-950 text-white flex items-center justify-center font-bold text-sm">
+                              {index + 1}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="outline" className="text-xs bg-blue-50">
+                                {question.questionType === 'multiple-choice'
+                                  ? 'Objective'
+                                  : question.questionType === 'true-false'
+                                    ? 'True/False'
+                                    : 'Theory'}
+                              </Badge>
+                              <Badge className="bg-amber-600 text-white text-xs">
+                                [{question.marks} {question.marks === 1 ? 'mark' : 'marks'}]
+                              </Badge>
+                            </div>
+                            <p className="text-sm sm:text-base text-gray-900 leading-relaxed font-medium">
+                              {question.questionText}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline" className="text-xs bg-blue-50">
-                              {question.questionType === 'multiple-choice'
-                                ? 'Objective'
-                                : question.questionType === 'true-false'
-                                ? 'True/False'
-                                : 'Theory'}
-                            </Badge>
-                            <Badge className="bg-amber-600 text-white text-xs">
-                              [{question.marks} {question.marks === 1 ? 'mark' : 'marks'}]
-                            </Badge>
-                          </div>
-                          <p className="text-sm sm:text-base text-gray-900 leading-relaxed font-medium">
-                            {question.questionText}
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Options for MCQ and True/False */}
-                      {question.questionType !== 'theory' && question.options.length > 0 && (
-                        <div className="ml-10 sm:ml-11 space-y-2">
-                          {question.options.map((option, optIndex) => (
-                            <div
-                              key={optIndex}
-                              className="flex items-start gap-3 p-2 border border-gray-300 rounded bg-gray-50"
-                            >
-                              <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-blue-950 mt-0.5"></div>
-                              <div className="flex-1 text-xs sm:text-sm text-gray-800">
-                                <span className="font-bold mr-2">
-                                  {String.fromCharCode(65 + optIndex)}.
-                                </span>
-                                {option}
+                        {/* Options for MCQ and True/False */}
+                        {question.questionType !== 'theory' && question.options.length > 0 && (
+                          <div className="ml-10 sm:ml-11 space-y-2">
+                            {question.options.map((option, optIndex) => (
+                              <div
+                                key={optIndex}
+                                className="flex items-start gap-3 p-2 border border-gray-300 rounded bg-gray-50"
+                              >
+                                <div className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-blue-950 mt-0.5"></div>
+                                <div className="flex-1 text-xs sm:text-sm text-gray-800">
+                                  <span className="font-bold mr-2">
+                                    {String.fromCharCode(65 + optIndex)}.
+                                  </span>
+                                  {option}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Answer Space for Theory */}
+                        {question.questionType === 'theory' && (
+                          <div className="ml-10 sm:ml-11">
+                            <div className="border-2 border-gray-400 rounded p-3 bg-blue-50 min-h-[180px]">
+                              <p className="text-xs text-gray-600 mb-2 font-semibold">ANSWER:</p>
+                              <div className="space-y-4">
+                                {[...Array(10)].map((_, i) => (
+                                  <div
+                                    key={i}
+                                    className="border-b border-dotted border-gray-400 h-4"
+                                  ></div>
+                                ))}
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Answer Space for Theory */}
-                      {question.questionType === 'theory' && (
-                        <div className="ml-10 sm:ml-11">
-                          <div className="border-2 border-gray-400 rounded p-3 bg-blue-50 min-h-[180px]">
-                            <p className="text-xs text-gray-600 mb-2 font-semibold">ANSWER:</p>
-                            <div className="space-y-4">
-                              {[...Array(10)].map((_, i) => (
-                                <div
-                                  key={i}
-                                  className="border-b border-dotted border-gray-400 h-4"
-                                ></div>
-                              ))}
-                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Separator between questions */}
-                      {index < assessment.questions.filter((q) => q.status === 'ready').length - 1 && (
-                        <div className="border-t border-gray-300 pt-2 mt-4"></div>
-                      )}
+                        {/* Separator between questions */}
+                        {index < assessment.questions.filter((q) => q.status === 'ready').length - 1 && (
+                          <div className="border-t border-gray-300 pt-2 mt-4"></div>
+                        )}
+                      </div>
+                    ))}
+
+                  {assessment.questions.filter((q) => q.status === 'ready').length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                      <AlertCircle className="w-12 h-12 mx-auto mb-3 text-amber-500" />
+                      <p className="text-sm">No ready questions to preview. Please mark questions as ready first.</p>
                     </div>
-                  ))}
+                  )}
+                </div>
+              </div>
 
-                {assessment.questions.filter((q) => q.status === 'ready').length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <AlertCircle className="w-12 h-12 mx-auto mb-3 text-amber-500" />
-                    <p className="text-sm">No ready questions to preview. Please mark questions as ready first.</p>
+              {/* Footer Signatures */}
+              <div className="border border-gray-400">
+                <div className="grid grid-cols-1 sm:grid-cols-2">
+                  <div className="border-b sm:border-b-0 sm:border-r border-gray-400 p-3">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Teacher's Name & Signature:</p>
+                    <div className="border-b-2 border-dotted border-gray-400 h-8 mt-4"></div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer Signatures */}
-            <div className="border border-gray-400">
-              <div className="grid grid-cols-1 sm:grid-cols-2">
-                <div className="border-b sm:border-b-0 sm:border-r border-gray-400 p-3">
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Teacher's Name & Signature:</p>
-                  <div className="border-b-2 border-dotted border-gray-400 h-8 mt-4"></div>
-                </div>
-                <div className="p-3">
-                  <p className="text-xs font-semibold text-gray-700 mb-2">Date:</p>
-                  <div className="border-b-2 border-dotted border-gray-400 h-8 mt-4"></div>
+                  <div className="p-3">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Date:</p>
+                    <div className="border-b-2 border-dotted border-gray-400 h-8 mt-4"></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Copyright Footer */}
-            <div className="text-center mt-4">
-              <p className="text-xs text-gray-500">
-                © {new Date().getFullYear()} Bishop Felix Owolabi International Academy. All Rights Reserved.
-              </p>
+              {/* Copyright Footer */}
+              <div className="text-center mt-4">
+                <p className="text-xs text-gray-500">
+                  © {new Date().getFullYear()} Bishop Felix Owolabi International Academy. All Rights Reserved.
+                </p>
+              </div>
             </div>
-          </div>
           </div>
 
           <DialogFooter className="px-6 py-3 border-t flex-shrink-0 bg-white">

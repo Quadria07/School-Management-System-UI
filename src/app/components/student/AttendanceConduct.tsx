@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
-import * as dataFlowService from '@/utils/dataFlowService';
-import { useAuth } from '@/contexts/AuthContext';
+import * as dataFlowService from '../../../utils/dataFlowService';
+import { useAuth } from '../../../contexts/AuthContext';
 import { format } from 'date-fns';
 
 interface AttendanceDay {
@@ -33,33 +33,28 @@ interface BehavioralRecord {
 }
 
 export const AttendanceConduct: React.FC = () => {
-  const [selectedMonth, setSelectedMonth] = useState('December 2025');
+  const [selectedMonth] = useState('December 2025');
   const [attendanceData, setAttendanceData] = useState<AttendanceDay[]>([]);
   const { user } = useAuth();
 
-  // ✅ Load attendance from localStorage (synced from teacher's attendance register)
   useEffect(() => {
     const loadAttendance = () => {
       try {
-        // Get all attendance records
         const records = dataFlowService.getAllAttendanceRecords();
-        
-        if (records && records.length > 0) {
-          // Find records for this student
+
+        if (records && records.length > 0 && user) {
           const studentName = user.name.toUpperCase();
-          const className = 'JSS 3A'; // TODO: Get from student profile
-          
-          // Flatten all attendance records into individual days
+          const className = 'JSS 3A';
+
           const attendanceDays: AttendanceDay[] = [];
-          
-          records.forEach(record => {
+
+          records.forEach((record: any) => {
             if (record.class === className) {
-              // Find this student in the record
-              const studentRecord = record.students.find(s => 
+              const studentRecord = record.students.find((s: any) =>
                 s.studentName.toUpperCase().includes(studentName.split(' ')[0]) ||
                 s.studentName.toUpperCase() === studentName
               );
-              
+
               if (studentRecord) {
                 attendanceDays.push({
                   date: format(new Date(record.date), 'MMM d'),
@@ -69,88 +64,41 @@ export const AttendanceConduct: React.FC = () => {
               }
             }
           });
-          
-          // Sort by date (newest first)
+
           attendanceDays.sort((a, b) => {
             const dateA = new Date(a.date + ', 2025');
             const dateB = new Date(b.date + ', 2025');
             return dateB.getTime() - dateA.getTime();
           });
-          
+
           setAttendanceData(attendanceDays);
         } else {
-          // Fallback to mock data if no records
-          setAttendanceData([
-            { date: 'Dec 31', status: 'present' },
-            { date: 'Dec 30', status: 'present' },
-            { date: 'Dec 27', status: 'late', remarks: 'Arrived 15 minutes late' },
-            { date: 'Dec 26', status: 'present' },
-            { date: 'Dec 24', status: 'present' },
-            { date: 'Dec 23', status: 'present' },
-            { date: 'Dec 20', status: 'present' },
-            { date: 'Dec 19', status: 'absent', remarks: 'Medical appointment (excused)' },
-            { date: 'Dec 18', status: 'present' },
-            { date: 'Dec 17', status: 'present' },
-          ]);
+          setAttendanceData([]);
         }
       } catch (error) {
         console.error('Error loading attendance:', error);
-        // Fallback data
-        setAttendanceData([
-          { date: 'Dec 31', status: 'present' },
-          { date: 'Dec 30', status: 'present' },
-        ]);
       }
     };
-    
+
     loadAttendance();
-    
-    // Poll for updates every 10 seconds
+
     const interval = setInterval(loadAttendance, 10000);
     return () => clearInterval(interval);
   }, [user]);
 
-  const [behavioralRecords] = useState<BehavioralRecord[]>([
-    {
-      id: '1',
-      type: 'merit',
-      title: 'Academic Excellence',
-      description: 'Outstanding performance in Mathematics quiz',
-      points: 10,
-      date: 'Dec 29, 2025',
-      teacher: 'Mrs. Okafor',
-    },
-    {
-      id: '2',
-      type: 'merit',
-      title: 'Leadership',
-      description: 'Led class project successfully',
-      points: 15,
-      date: 'Dec 20, 2025',
-      teacher: 'Mr. Adeleke',
-    },
-    {
-      id: '3',
-      type: 'demerit',
-      title: 'Late Submission',
-      description: 'Assignment submitted 2 days late',
-      points: -5,
-      date: 'Dec 15, 2025',
-      teacher: 'Mrs. Okafor',
-    },
-  ]);
+  const [behavioralRecords] = useState<BehavioralRecord[]>([]);
 
   const totalDays = attendanceData.length;
-  const presentDays = attendanceData.filter((d) => d.status === 'present').length;
-  const lateDays = attendanceData.filter((d) => d.status === 'late').length;
-  const absentDays = attendanceData.filter((d) => d.status === 'absent').length;
-  const attendanceRate = ((presentDays + lateDays) / totalDays) * 100;
+  const presentDays = attendanceData.filter((d: AttendanceDay) => d.status === 'present').length;
+  const lateDays = attendanceData.filter((d: AttendanceDay) => d.status === 'late').length;
+  const absentDays = attendanceData.filter((d: AttendanceDay) => d.status === 'absent').length;
+  const attendanceRate = totalDays > 0 ? ((presentDays + lateDays) / totalDays) * 100 : 0;
 
   const totalMerits = behavioralRecords
-    .filter((r) => r.type === 'merit')
-    .reduce((sum, r) => sum + r.points, 0);
+    .filter((r: BehavioralRecord) => r.type === 'merit')
+    .reduce((sum: number, r: BehavioralRecord) => sum + r.points, 0);
   const totalDemerits = Math.abs(
-    behavioralRecords.filter((r) => r.type === 'demerit').reduce((sum, r) => sum + r.points, 0)
+    behavioralRecords.filter((r: BehavioralRecord) => r.type === 'demerit').reduce((sum: number, r: BehavioralRecord) => sum + r.points, 0)
   );
   const netPoints = totalMerits - totalDemerits;
 
@@ -240,13 +188,12 @@ export const AttendanceConduct: React.FC = () => {
             {attendanceData.map((day, idx) => (
               <div
                 key={idx}
-                className={`p-3 rounded-lg border-2 ${
-                  day.status === 'present'
-                    ? 'bg-green-50 border-green-300'
-                    : day.status === 'late'
+                className={`p-3 rounded-lg border-2 ${day.status === 'present'
+                  ? 'bg-green-50 border-green-300'
+                  : day.status === 'late'
                     ? 'bg-amber-50 border-amber-300'
                     : 'bg-red-50 border-red-300'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-gray-600">{day.date}</span>
@@ -294,11 +241,10 @@ export const AttendanceConduct: React.FC = () => {
             {behavioralRecords.map((record) => (
               <div
                 key={record.id}
-                className={`p-4 rounded-lg border ${
-                  record.type === 'merit'
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200'
-                }`}
+                className={`p-4 rounded-lg border ${record.type === 'merit'
+                  ? 'bg-green-50 border-green-200'
+                  : 'bg-red-50 border-red-200'
+                  }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">

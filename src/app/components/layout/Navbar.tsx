@@ -52,52 +52,11 @@ interface Notification {
 export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigate }) => {
   const { user, logout } = useAuth();
   const parentContext = useParent();
-  
+
   const [showHelpDialog, setShowHelpDialog] = useState(false);
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubject, setSupportSubject] = useState('');
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: 'Payroll Approved',
-      message: 'Monthly payroll for December has been approved and processed.',
-      timestamp: '2 hours ago',
-      type: 'success',
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'New Candidate Application',
-      message: 'Sarah Johnson applied for Mathematics Teacher position.',
-      timestamp: '5 hours ago',
-      type: 'info',
-      read: false,
-    },
-    {
-      id: '3',
-      title: 'System Maintenance',
-      message: 'Scheduled maintenance on Dec 30, 2024 at 2:00 AM.',
-      timestamp: '1 day ago',
-      type: 'warning',
-      read: false,
-    },
-    {
-      id: '4',
-      title: 'Financial Report Ready',
-      message: 'Q4 2024 financial report is ready for review.',
-      timestamp: '2 days ago',
-      type: 'info',
-      read: true,
-    },
-    {
-      id: '5',
-      title: 'Student Admission',
-      message: '15 new students admitted for the new academic session.',
-      timestamp: '3 days ago',
-      type: 'success',
-      read: true,
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   if (!user) return null;
 
@@ -182,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigate }) =
           >
             <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
-          
+
           <div className="hidden sm:block">
             <p className="text-[10px] sm:text-xs text-gray-500">Academic Session</p>
             <p className="text-xs sm:text-sm text-blue-950">{user.academicSession}</p>
@@ -220,11 +179,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigate }) =
                       parentContext.setSelectedChild(child);
                       toast.success(`Switched to ${child.name}'s dashboard`);
                     }}
-                    className={`text-[11px] sm:text-xs p-2 ${
-                      parentContext.selectedChild?.id === child.id
+                    className={`text-[11px] sm:text-xs p-2 ${parentContext.selectedChild?.id === child.id
                         ? 'bg-blue-50 border-l-4 border-blue-600'
                         : ''
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2 w-full">
                       <div className="text-xl flex-shrink-0">{child.photo}</div>
@@ -291,9 +249,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, onNavigate }) =
                     <div
                       key={notification.id}
                       onClick={() => markAsRead(notification.id)}
-                      className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                        !notification.read ? 'bg-blue-50' : ''
-                      }`}
+                      className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${!notification.read ? 'bg-blue-50' : ''
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         {getNotificationIcon(notification.type)}

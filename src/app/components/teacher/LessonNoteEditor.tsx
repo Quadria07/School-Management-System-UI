@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SchoolAPI } from '../../../utils/api';
 import { LessonNote } from '../../../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -56,7 +57,7 @@ export const LessonNoteEditor: React.FC<LessonNoteEditorProps> = ({
     topic: lessonNote?.topic || '',
     content: lessonNote?.content || '',
     status: lessonNote?.status || 'draft',
-    term: 'First Term',
+    term: '',
     week: 1,
     period: '1st Period',
     duration: '40 minutes',
@@ -75,8 +76,27 @@ export const LessonNoteEditor: React.FC<LessonNoteEditorProps> = ({
     hodRemarks: '',
   });
 
+  const [availableTerms, setAvailableTerms] = useState<string[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  React.useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await SchoolAPI.getAcademicSettings();
+        if (res.status === 'success' && res.data) {
+          const data = res.data as any;
+          if (data.currentTerm && !lessonNote?.id) {
+            setFormData(prev => ({ ...prev, term: data.currentTerm }));
+          }
+          if (data.terms) setAvailableTerms(data.terms);
+        }
+      } catch (error) {
+        console.error('Error fetching academic settings:', error);
+      }
+    };
+    fetchSettings();
+  }, [lessonNote]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -130,7 +150,7 @@ export const LessonNoteEditor: React.FC<LessonNoteEditorProps> = ({
 
     const config = variants[status] || variants.draft;
     return (
-      <Badge 
+      <Badge
         variant={config.variant}
         className={status === 'published' ? 'bg-green-500' : status === 'pending' ? 'bg-amber-500' : ''}
       >
@@ -242,9 +262,17 @@ export const LessonNoteEditor: React.FC<LessonNoteEditorProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="First Term">First Term</SelectItem>
-                    <SelectItem value="Second Term">Second Term</SelectItem>
-                    <SelectItem value="Third Term">Third Term</SelectItem>
+                    {availableTerms.length > 0 ? (
+                      availableTerms.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="First Term">First Term</SelectItem>
+                        <SelectItem value="Second Term">Second Term</SelectItem>
+                        <SelectItem value="Third Term">Third Term</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -409,7 +437,7 @@ export const LessonNoteEditor: React.FC<LessonNoteEditorProps> = ({
             <h3 className="text-lg font-semibold text-blue-950 border-b pb-2">
               5. LESSON DEVELOPMENT
             </h3>
-            
+
             <div className="space-y-2">
               <Label htmlFor="setInduction">
                 A. Set Induction/Introduction (5-7 minutes) *
@@ -533,7 +561,7 @@ export const LessonNoteEditor: React.FC<LessonNoteEditorProps> = ({
                 <Eye className="w-4 h-4 mr-2" />
                 Preview
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}

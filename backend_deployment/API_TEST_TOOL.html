@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Tester</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+            background: #eef2f5;
+        }
+
+        .card {
+            border: 1px solid #ccc;
+            padding: 25px;
+            border-radius: 10px;
+            background: #fff;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        h3 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+            color: #444;
+        }
+
+        input,
+        button,
+        select {
+            padding: 12px;
+            margin: 8px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #0051a2;
+        }
+
+        button.secondary {
+            background: #666;
+        }
+
+        button.student-btn {
+            background: #10b981;
+        }
+
+        button.teacher-btn {
+            background: #f59e0b;
+        }
+
+        pre {
+            background: #222;
+            color: #a5f3fc;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 6px;
+            max-height: 400px;
+            font-size: 14px;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .token-box {
+            word-break: break-all;
+            font-size: 12px;
+            background: #eee;
+            padding: 5px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .section-header {
+            margin-top: 20px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🛠️ Backend API Tester</h1>
+
+    <div class="card">
+        <h3>1. Configuration</h3>
+        <label>Your Website URL:</label>
+        <input type="text" id="baseUrl" value="https://portal.bfoiacademy.com" placeholder="https://your-domain.com">
+        <div id="tokenDisplay" class="token-box">
+            <strong>Current Token:</strong> <span id="currentToken">None</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Authentication Tests</h3>
+        <div class="grid">
+            <div>
+                <h4>Teacher</h4>
+                <button onclick="runTest('auth/create_test_user.php')" class="secondary">1. Create Teacher</button>
+                <button onclick="login('teacher@test.com', 'password123')" class="teacher-btn">2. Login as
+                    Teacher</button>
+            </div>
+            <div>
+                <h4>Student</h4>
+                <button onclick="runTest('auth/create_test_student.php')" class="secondary">1. Create Student</button>
+                <button onclick="login('student@test.com', 'password123')" class="student-btn">2. Login as
+                    Student</button>
+            </div>
+        </div>
+        <div class="grid">
+            <div>
+                <h4>Parent</h4>
+                <button onclick="runTest('auth/create_test_parent.php')" class="secondary">1. Create Parent</button>
+                <button onclick="login('parent@test.com', 'password123')" class="teacher-btn"
+                    style="background:#8b5cf6">2. Login as Parent</button>
+            </div>
+            <div>
+                <h4>Principal (Admin)</h4>
+                <button onclick="runTest('auth/create_test_admin.php')" class="secondary">1. Create Admin</button>
+                <button onclick="login('principal@test.com', 'password123')" class="teacher-btn"
+                    style="background:#ef4444">2. Login as Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>3. Dashboard Tests (Requires Login)</h3>
+        <div class="grid">
+            <div>
+                <h4>Teacher Dashboard</h4>
+                <button onclick="runAuthenticatedTest('teachers/stats.php')">Get Stats</button>
+                <button onclick="runAuthenticatedTest('teachers/classes.php')">Get Classes</button>
+            </div>
+            <div>
+                <h4>Student Dashboard</h4>
+                <button onclick="runAuthenticatedTest('students/profile.php')">Get Profile</button>
+                <button onclick="runAuthenticatedTest('students/stats.php')">Get Stats</button>
+            </div>
+        </div>
+
+        <div class="section-header">📝 Phase 3: Lesson Notes</div>
+        <div class="grid">
+            <div>
+                <button onclick="createLessonNote()" class="secondary">1. Create Note (Teacher)</button>
+                <div style="font-size:12px; color:#666; margin-top:5px;">Note ID: <span id="noteIdDisplay">None</span>
+                </div>
+            </div>
+            <div>
+                <button onclick="runAuthenticatedTest('lesson-notes/list.php')">2. List My Notes</button>
+            </div>
+            <div>
+                <button onclick="updateNoteStatus('pending')" class="teacher-btn">3. Submit Note (Teacher)</button>
+            </div>
+            <div>
+                <button onclick="updateNoteStatus('approved')" style="background:#ef4444; color: white;">4. Approve Note
+                    (Admin)</button>
+            </div>
+        </div>
+
+        <div class="section-header">📊 Phase 4: Results</div>
+        <div class="grid">
+            <div>
+                <button onclick="uploadResult()" class="teacher-btn">1. Upload Result (Teacher)</button>
+            </div>
+            <div>
+                <button onclick="viewResult()" class="student-btn">2. View My Result (Student)</button>
+            </div>
+        </div>
+
+        <div class="section-header">💰 Phase 5: Fees</div>
+        <div class="grid">
+            <div>
+                <button onclick="checkFeeBalance()" class="student-btn">Check Fee Balance (Student)</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>4. Response Output</h3>
+        <div id="status" class="status"></div>
+        <pre id="output">Ready...</pre>
+    </div>
+
+    <script>
+        let authToken = '';
+        let lastCreatedNoteId = '';
+
+        function getUrl(path) {
+            let base = document.getElementById('baseUrl').value.trim();
+            if (!base) { alert("Please enter your website URL first!"); return null; }
+            if (base.endsWith('/')) base = base.slice(0, -1);
+            return `${base}/api/${path}`;
+        }
+
+        async function runTest(endpoint) {
+            const url = getUrl(endpoint);
+            if (!url) return;
+
+            updateStatus("Requesting " + endpoint + "...", "normal");
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                showResult(data);
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        async function login(email, password) {
+            const url = getUrl('auth/login.php');
+            if (!url) return;
+
+            updateStatus(`Logging in as ${email}...`, "normal");
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                showResult(data);
+
+                if (data.token) {
+                    authToken = data.token;
+                    document.getElementById('tokenDisplay').style.display = 'block';
+                    document.getElementById('currentToken').textContent = authToken.substring(0, 50) + "...";
+                    updateStatus("Login Successful! Token saved for next requests.", "success");
+                }
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        async function createLessonNote() {
+            if (!authToken) { alert("Please login as Teacher first!"); return; }
+
+            const url = getUrl('lesson-notes/create.php');
+            updateStatus("Creating Lesson Note...", "normal");
+
+            // Mock Data
+            const noteData = {
+                class_id: "demo-class-id",
+                subject_id: "demo-subject-id",
+                topic: "Biology Week " + Math.floor(Math.random() * 1000),
+                week: 1,
+                content: "This is a test note.",
+                status: "draft"
+            };
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(noteData)
+                });
+                const data = await res.json();
+                showResult(data);
+
+                if (data.status === 'success' && data.data.id) {
+                    lastCreatedNoteId = data.data.id;
+                    document.getElementById('noteIdDisplay').textContent = lastCreatedNoteId;
+                }
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        async function updateNoteStatus(newStatus) {
+            if (!authToken) { alert("Please login first!"); return; }
+            if (!lastCreatedNoteId) { alert("Please Create a Note first!"); return; }
+
+            const url = getUrl('lesson-notes/update_status.php');
+            updateStatus(`Updating status to '${newStatus}'...`, "normal");
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: lastCreatedNoteId, status: newStatus })
+                });
+                const data = await res.json();
+                showResult(data);
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        async function checkFeeBalance() {
+            if (!authToken) { alert("Please login as Student first!"); return; }
+            const url = getUrl('fees/get_balance.php');
+            updateStatus("Checking Fees...", "normal");
+
+            try {
+                const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
+                const data = await res.json();
+                showResult(data);
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        async function uploadResult() {
+            if (!authToken) { alert("Please login as Teacher first!"); return; }
+
+            // Hardcoded Test Student ID
+            const studentId = "41922c87-2f4a-4eaa-8840-2843810b5443";
+
+            const url = getUrl('results/upload.php');
+            updateStatus("Uploading Result...", "normal");
+
+            const resultData = {
+                student_id: studentId,
+                subject_id: "demo-subject-id",
+                term: "First Term",
+                ca_score: 25,
+                exam_score: 60,
+                academic_session: "2024/2025"
+            };
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(resultData)
+                });
+                const data = await res.json();
+                showResult(data);
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        async function viewResult() {
+            if (!authToken) { alert("Please login as Student first!"); return; }
+            const url = getUrl('results/view.php?term=First Term');
+            updateStatus("Fetching Results...", "normal");
+
+            try {
+                const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
+                const data = await res.json();
+                showResult(data);
+            } catch (err) {
+                showError(err);
+            }
+        }
+
+        function showResult(data) {
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            if (data.status === 'success') {
+                updateStatus("Success", "success");
+            } else if (data.status === 'error' || data.error) {
+                updateStatus("Failed", "error");
+            }
+        }
+
+        function showError(err) {
+            document.getElementById('output').textContent = "Error: " + err.message + "\n\nCheck console for details.";
+            updateStatus("Network/Parsing Error", "error");
+        }
+
+        function updateStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = 'status ' + type;
+        }
+    </script>
+</body>
+
+</html>

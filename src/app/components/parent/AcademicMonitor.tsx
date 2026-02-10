@@ -100,7 +100,7 @@ interface Assignment {
 export const AcademicMonitor: React.FC = () => {
   const parentContext = useParent();
   const selectedChild = parentContext?.selectedChild;
-  
+
   const [selectedTerm, setSelectedTerm] = useState('first-2025');
   const [activeTab, setActiveTab] = useState('materials');
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,244 +111,15 @@ export const AcademicMonitor: React.FC = () => {
   const [showMaterialViewer, setShowMaterialViewer] = useState(false);
   const [assignmentTab, setAssignmentTab] = useState<'new' | 'submitted' | 'graded'>('new');
 
-  const [subjectScores] = useState<SubjectScore[]>([
-    {
-      subject: 'Mathematics',
-      ca1: 18,
-      ca2: 20,
-      exam: 54,
-      total: 92,
-      grade: 'A',
-      trend: 'up',
-    },
-    {
-      subject: 'English Language',
-      ca1: 17,
-      ca2: 19,
-      exam: 52,
-      total: 88,
-      grade: 'A',
-      trend: 'up',
-    },
-    {
-      subject: 'Biology',
-      ca1: 16,
-      ca2: 18,
-      exam: 51,
-      total: 85,
-      grade: 'B+',
-      trend: 'same',
-    },
-    {
-      subject: 'Chemistry',
-      ca1: 17,
-      ca2: 19,
-      exam: 51,
-      total: 87,
-      grade: 'A-',
-      trend: 'up',
-    },
-    {
-      subject: 'Physics',
-      ca1: 16,
-      ca2: 17,
-      exam: 51,
-      total: 84,
-      grade: 'B+',
-      trend: 'down',
-      recommendation: 'Consider extra practice in motion and forces',
-    },
-    {
-      subject: 'Economics',
-      ca1: 18,
-      ca2: 19,
-      exam: 53,
-      total: 90,
-      grade: 'A',
-      trend: 'up',
-    },
-  ]);
+  const [subjectScores] = useState<SubjectScore[]>([]);
 
-  const [subjects] = useState<Subject[]>([
-    {
-      id: '1',
-      name: 'Mathematics',
-      teacher: 'Mr. Adeyemi',
-      totalNotes: 24,
-      lastUpdated: '2 days ago',
-      color: 'bg-blue-500',
-    },
-    {
-      id: '2',
-      name: 'English Language',
-      teacher: 'Mrs. Okonkwo',
-      totalNotes: 20,
-      lastUpdated: '1 day ago',
-      color: 'bg-purple-500',
-    },
-    {
-      id: '3',
-      name: 'Biology',
-      teacher: 'Dr. Ibrahim',
-      totalNotes: 18,
-      lastUpdated: '3 days ago',
-      color: 'bg-green-500',
-    },
-    {
-      id: '4',
-      name: 'Chemistry',
-      teacher: 'Mrs. Eze',
-      totalNotes: 22,
-      lastUpdated: '1 day ago',
-      color: 'bg-red-500',
-    },
-    {
-      id: '5',
-      name: 'Physics',
-      teacher: 'Mr. Balogun',
-      totalNotes: 21,
-      lastUpdated: '4 days ago',
-      color: 'bg-amber-500',
-    },
-    {
-      id: '6',
-      name: 'Economics',
-      teacher: 'Mrs. Adeleke',
-      totalNotes: 16,
-      lastUpdated: '1 week ago',
-      color: 'bg-teal-500',
-    },
-  ]);
+  const [subjects] = useState<Subject[]>([]);
 
-  const [lessonNotes] = useState<LessonNote[]>([
-    {
-      id: '1',
-      title: 'Quadratic Equations',
-      topic: 'Solving quadratic equations using the quadratic formula',
-      week: 'Week 12',
-      date: 'Dec 28, 2025',
-      status: 'approved',
-      materialsCount: 4,
-    },
-    {
-      id: '2',
-      title: 'Simultaneous Equations',
-      topic: 'Solving two equations with two unknowns',
-      week: 'Week 11',
-      date: 'Dec 21, 2025',
-      status: 'approved',
-      materialsCount: 3,
-    },
-    {
-      id: '3',
-      title: 'Logarithms and Indices',
-      topic: 'Laws of logarithms and their applications',
-      week: 'Week 10',
-      date: 'Dec 14, 2025',
-      status: 'approved',
-      materialsCount: 5,
-    },
-    {
-      id: '4',
-      title: 'Trigonometry Basics',
-      topic: 'Sine, cosine, and tangent ratios',
-      week: 'Week 9',
-      date: 'Dec 7, 2025',
-      status: 'approved',
-      materialsCount: 6,
-    },
-    {
-      id: '5',
-      title: 'Coordinate Geometry',
-      topic: 'Distance between two points and midpoint formula',
-      week: 'Week 8',
-      date: 'Nov 30, 2025',
-      status: 'approved',
-      materialsCount: 3,
-    },
-  ]);
+  const [lessonNotes] = useState<LessonNote[]>([]);
 
-  const [materials] = useState<Material[]>([
-    {
-      id: '1',
-      name: 'Quadratic Equations - Lesson Note.pdf',
-      type: 'pdf',
-      size: '2.4 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-    {
-      id: '2',
-      name: 'Solving Quadratic Equations - Video Tutorial.mp4',
-      type: 'video',
-      size: '45.8 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-    {
-      id: '3',
-      name: 'Practice Problems.pdf',
-      type: 'pdf',
-      size: '1.2 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-    {
-      id: '4',
-      name: 'Quadratic Formula Derivation.ppt',
-      type: 'ppt',
-      size: '3.5 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-  ]);
+  const [materials] = useState<Material[]>([]);
 
-  const [assignments] = useState<Assignment[]>([
-    {
-      id: '1',
-      title: 'Essay: The Impact of Technology on Education',
-      subject: 'English Language',
-      teacher: 'Mrs. Okonkwo',
-      description:
-        'Write a comprehensive essay (500-700 words) discussing how technology has transformed modern education. Include examples and personal observations.',
-      dueDate: 'Tomorrow, 5:00 PM',
-      maxScore: 20,
-      status: 'new',
-    },
-    {
-      id: '2',
-      title: 'Chapter 5 Review Questions',
-      subject: 'Biology',
-      teacher: 'Dr. Ibrahim',
-      description: 'Answer all questions from Chapter 5 (Questions 1-15) in your textbook.',
-      dueDate: 'Thursday, 3:00 PM',
-      maxScore: 15,
-      status: 'submitted',
-      submittedDate: 'Yesterday, 2:30 PM',
-    },
-    {
-      id: '3',
-      title: 'Quadratic Equations Practice Set',
-      subject: 'Mathematics',
-      teacher: 'Mr. Adeyemi',
-      description:
-        'Solve all 20 problems on quadratic equations. Show all working clearly.',
-      dueDate: 'Dec 20, 2025',
-      maxScore: 20,
-      status: 'graded',
-      score: 18,
-      feedback:
-        'Excellent work! You demonstrated a strong understanding of the quadratic formula. Minor error in question 15.',
-      submittedDate: 'Dec 18, 2025',
-    },
-    {
-      id: '4',
-      title: 'Physics Lab Report - Motion and Forces',
-      subject: 'Physics',
-      teacher: 'Mr. Balogun',
-      description:
-        'Submit a detailed lab report on the motion and forces experiment conducted last week.',
-      dueDate: 'Next Monday',
-      maxScore: 25,
-      status: 'new',
-    },
-  ]);
+  const [assignments] = useState<Assignment[]>([]);
 
   const averageScore = subjectScores.reduce((sum, s) => sum + s.total, 0) / subjectScores.length;
   const classPosition = 5;
@@ -653,31 +424,28 @@ export const AcademicMonitor: React.FC = () => {
           <div className="flex gap-2 border-b">
             <Button
               variant="ghost"
-              className={`rounded-none ${
-                assignmentTab === 'new' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
-              }`}
+              className={`rounded-none ${assignmentTab === 'new' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
+                }`}
               onClick={() => setAssignmentTab('new')}
             >
               New ({assignments.filter((a) => a.status === 'new').length})
             </Button>
             <Button
               variant="ghost"
-              className={`rounded-none ${
-                assignmentTab === 'submitted'
+              className={`rounded-none ${assignmentTab === 'submitted'
                   ? 'border-b-2 border-blue-600 text-blue-600'
                   : 'text-gray-600'
-              }`}
+                }`}
               onClick={() => setAssignmentTab('submitted')}
             >
               Submitted ({assignments.filter((a) => a.status === 'submitted').length})
             </Button>
             <Button
               variant="ghost"
-              className={`rounded-none ${
-                assignmentTab === 'graded'
+              className={`rounded-none ${assignmentTab === 'graded'
                   ? 'border-b-2 border-blue-600 text-blue-600'
                   : 'text-gray-600'
-              }`}
+                }`}
               onClick={() => setAssignmentTab('graded')}
             >
               Graded ({assignments.filter((a) => a.status === 'graded').length})
@@ -847,8 +615,8 @@ export const AcademicMonitor: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{selectedMaterial?.name}</DialogTitle>
             <DialogDescription>
-              {selectedMaterial?.type === 'video' 
-                ? 'Watch the video tutorial below' 
+              {selectedMaterial?.type === 'video'
+                ? 'Watch the video tutorial below'
                 : 'View the study material below'}
             </DialogDescription>
           </DialogHeader>

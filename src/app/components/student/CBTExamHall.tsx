@@ -26,7 +26,7 @@ import {
 import { Progress } from '../ui/progress';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
-import * as dataFlowService from '@/utils/dataFlowService';
+import * as dataFlowService from '../../../utils/dataFlowService';
 
 interface Exam {
   id: string;
@@ -63,7 +63,7 @@ export const CBTExamHall: React.FC = () => {
   // Load approved and published CBT assessments
   useEffect(() => {
     const approvedCBTs = dataFlowService.getStudentVisibleCBTAssessments();
-    
+
     // Map to Exam interface with mock dates for display
     const mappedExams: Exam[] = approvedCBTs.map((cbt) => ({
       id: cbt.id,
@@ -75,42 +75,11 @@ export const CBTExamHall: React.FC = () => {
       endDate: cbt.dueDate ? new Date(cbt.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A',
       status: 'active' as const,
     }));
-    
+
     setExams(mappedExams);
   }, []);
 
-  const [questions, setQuestions] = useState<Question[]>([
-    {
-      id: '1',
-      questionNumber: 1,
-      text: 'What is the solution to the equation 2x + 5 = 15?',
-      options: ['x = 5', 'x = 10', 'x = 7.5', 'x = 20'],
-    },
-    {
-      id: '2',
-      questionNumber: 2,
-      text: 'Which of the following is a prime number?',
-      options: ['21', '23', '25', '27'],
-    },
-    {
-      id: '3',
-      questionNumber: 3,
-      text: 'Calculate the area of a circle with radius 7cm (π = 22/7)',
-      options: ['144 cm²', '154 cm²', '164 cm²', '174 cm²'],
-    },
-    {
-      id: '4',
-      questionNumber: 4,
-      text: 'Simplify: 3(x + 4) - 2x',
-      options: ['x + 12', 'x + 4', '5x + 12', 'x - 12'],
-    },
-    {
-      id: '5',
-      questionNumber: 5,
-      text: 'What is 15% of 200?',
-      options: ['20', '25', '30', '35'],
-    },
-  ]);
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   useEffect(() => {
     if (activeView === 'exam' && timeRemaining > 0) {
@@ -371,11 +340,10 @@ export const CBTExamHall: React.FC = () => {
                       onClick={() => handleFlagQuestion(currentQuestionIndex)}
                     >
                       <Flag
-                        className={`w-4 h-4 ${
-                          questions[currentQuestionIndex].flagged
-                            ? 'fill-amber-500 text-amber-500'
-                            : ''
-                        }`}
+                        className={`w-4 h-4 ${questions[currentQuestionIndex].flagged
+                          ? 'fill-amber-500 text-amber-500'
+                          : ''
+                          }`}
                       />
                     </Button>
                   </div>
@@ -391,11 +359,10 @@ export const CBTExamHall: React.FC = () => {
                       {questions[currentQuestionIndex].options.map((option, idx) => (
                         <div
                           key={idx}
-                          className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                            questions[currentQuestionIndex].selectedAnswer === idx
-                              ? 'border-blue-600 bg-blue-50'
-                              : 'border-gray-200 hover:border-blue-300'
-                          }`}
+                          className={`flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${questions[currentQuestionIndex].selectedAnswer === idx
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                            }`}
                           onClick={() => handleAnswerSelect(currentQuestionIndex, idx)}
                         >
                           <RadioGroupItem value={idx.toString()} id={`option-${idx}`} />
@@ -430,15 +397,14 @@ export const CBTExamHall: React.FC = () => {
                     <button
                       key={q.id}
                       onClick={() => setCurrentQuestionIndex(idx)}
-                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                        idx === currentQuestionIndex
-                          ? 'bg-blue-600 text-white'
-                          : q.selectedAnswer !== undefined
+                      className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${idx === currentQuestionIndex
+                        ? 'bg-blue-600 text-white'
+                        : q.selectedAnswer !== undefined
                           ? 'bg-green-100 text-green-800 border-2 border-green-300'
                           : q.flagged
-                          ? 'bg-amber-100 text-amber-800 border-2 border-amber-300'
-                          : 'bg-gray-100 text-gray-600 border-2 border-gray-300'
-                      }`}
+                            ? 'bg-amber-100 text-amber-800 border-2 border-amber-300'
+                            : 'bg-gray-100 text-gray-600 border-2 border-gray-300'
+                        }`}
                     >
                       {idx + 1}
                     </button>

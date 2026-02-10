@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookOpen,
   Calendar,
@@ -18,11 +18,14 @@ import {
   ClipboardList,
   PlusCircle,
   MapPin,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Progress } from '../ui/progress';
+import { TeacherAPI } from '../../../utils/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface TodaySchedule {
   id: string;
@@ -66,125 +69,41 @@ interface ClassroomOverviewProps {
 }
 
 export const ClassroomOverview: React.FC<ClassroomOverviewProps> = ({ onNavigate }) => {
-  const [todaySchedule] = useState<TodaySchedule[]>([
-    {
-      id: '1',
-      period: '1st Period',
-      time: '8:00 - 8:45 AM',
-      subject: 'Mathematics',
-      class: 'JSS 3A',
-      room: 'Room 12',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      period: '2nd Period',
-      time: '8:45 - 9:30 AM',
-      subject: 'Mathematics',
-      class: 'JSS 2B',
-      room: 'Room 12',
-      status: 'ongoing',
-    },
-    {
-      id: '3',
-      period: '4th Period',
-      time: '10:30 - 11:15 AM',
-      subject: 'Further Mathematics',
-      class: 'SSS 2A',
-      room: 'Room 12',
-      status: 'upcoming',
-    },
-    {
-      id: '4',
-      period: '6th Period',
-      time: '12:45 - 1:30 PM',
-      subject: 'Mathematics',
-      class: 'JSS 1C',
-      room: 'Room 12',
-      status: 'upcoming',
-    },
-  ]);
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+  const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
+  const [todaySchedule, setTodaySchedule] = useState<TodaySchedule[]>([]);
 
-  const [assignmentStatus] = useState<AssignmentStatus[]>([
-    {
-      id: '1',
-      title: 'Quadratic Equations Assignment',
-      class: 'JSS 3A',
-      totalStudents: 42,
-      submitted: 38,
-      dueDate: 'Today, 11:59 PM',
-    },
-    {
-      id: '2',
-      title: 'Trigonometry Practice Questions',
-      class: 'SSS 2A',
-      totalStudents: 35,
-      submitted: 22,
-      dueDate: 'Tomorrow, 11:59 PM',
-    },
-    {
-      id: '3',
-      title: 'Algebra Quiz',
-      class: 'JSS 2B',
-      totalStudents: 40,
-      submitted: 40,
-      dueDate: 'Yesterday',
-    },
-  ]);
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, classesRes] = await Promise.all([
+          TeacherAPI.getStats(),
+          TeacherAPI.getClasses()
+        ]);
 
-  const [principalFeedback] = useState<PrincipalFeedback[]>([
-    {
-      id: '1',
-      lessonNote: 'Introduction to Quadratic Equations',
-      subject: 'Mathematics',
-      class: 'JSS 3A',
-      feedback:
-        'Excellent structure and clear learning objectives. Well done!',
-      status: 'approved',
-      date: '2 hours ago',
-    },
-    {
-      id: '2',
-      lessonNote: 'Trigonometric Ratios',
-      subject: 'Further Mathematics',
-      class: 'SSS 2A',
-      feedback:
-        'Please add more practical examples and expand on the evaluation section.',
-      status: 'revision-needed',
-      date: '1 day ago',
-    },
-  ]);
+        if (statsRes.status === 'success') setStats(statsRes.data);
+        if (classesRes.status === 'success') {
+          const classesData = (classesRes.data || []) as any[];
+          setTeacherClasses(classesData);
+          setTodaySchedule([]);
+        }
+      } catch (error) {
+        console.error('Error fetching teacher data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
-  const [duties] = useState<Duty[]>([
-    {
-      id: '1',
-      type: 'Assembly Duty',
-      time: '7:30 AM - 8:00 AM',
-      location: 'School Assembly Ground',
-      priority: 'high',
-    },
-    {
-      id: '2',
-      type: 'Break-time Supervision',
-      time: '9:30 AM - 10:00 AM',
-      location: 'Junior School Courtyard',
-      priority: 'medium',
-    },
-    {
-      id: '3',
-      type: 'Mathematics Departmental Meeting',
-      time: '2:30 PM - 3:15 PM',
-      location: 'Staff Room B',
-      priority: 'high',
-    },
-  ]);
+  const [assignmentStatus] = useState<AssignmentStatus[]>([]);
+  const [principalFeedback] = useState<PrincipalFeedback[]>([]);
+  const [duties] = useState<Duty[]>([]);
 
-  const teacherClasses = [
-    { subject: 'Mathematics', class: 'JSS 3A', students: 42 },
-    { subject: 'Mathematics', class: 'JSS 2B', students: 40 },
-    { subject: 'Mathematics', class: 'JSS 1C', students: 38 },
-    { subject: 'Further Mathematics', class: 'SSS 2A', students: 35 },
-  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -205,14 +124,14 @@ export const ClassroomOverview: React.FC<ClassroomOverviewProps> = ({ onNavigate
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl mb-2 text-blue-950">
-            Good Morning, Mr. Teacher
+            Good Morning, {user?.name || 'Teacher'}
           </h1>
           <p className="text-sm sm:text-base text-gray-600">
-            Tuesday, December 30, 2025 • Academic Session 2024/2025 (First Term)
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • Academic Session {user?.academicSession || '2024/2025'}
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
+          <Button
             className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
             onClick={() => onNavigate && onNavigate('/daily-briefing')}
           >
@@ -222,84 +141,95 @@ export const ClassroomOverview: React.FC<ClassroomOverviewProps> = ({ onNavigate
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-gray-600">Loading dashboard...</span>
+        </div>
+      )}
+
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Classes Today
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl sm:text-3xl text-blue-950">4</p>
-                <p className="text-xs text-gray-500 mt-1">1 ongoing</p>
+      {!loading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Classes Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl sm:text-3xl text-blue-950">{todaySchedule.length}</p>
+                  <p className="text-xs text-gray-500 mt-1">Scheduled classes</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Total Students
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl sm:text-3xl text-blue-950">155</p>
-                <p className="text-xs text-gray-500 mt-1">Across 4 classes</p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Total Students
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl sm:text-3xl text-blue-950">{stats?.total_students || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">Across {teacherClasses.length} classes</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Pending Reviews
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl sm:text-3xl text-blue-950">12</p>
-                <p className="text-xs text-gray-500 mt-1">Assignments to grade</p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Pending Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl sm:text-3xl text-blue-950">0</p>
+                  <p className="text-xs text-gray-500 mt-1">Assignments to grade</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
+                </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Lesson Notes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl sm:text-3xl text-blue-950">3/4</p>
-                <p className="text-xs text-gray-500 mt-1">Approved this week</p>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                Lesson Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl sm:text-3xl text-blue-950">{stats?.total_lesson_notes || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">Total uploaded</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                </div>
               </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
 
       {/* CBT Assessment Overview & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -327,60 +257,32 @@ export const ClassroomOverview: React.FC<ClassroomOverviewProps> = ({ onNavigate
                   <p className="text-sm font-medium text-blue-900">Total Assessments</p>
                   <ClipboardList className="w-5 h-5 text-blue-600" />
                 </div>
-                <p className="text-2xl text-blue-950">11</p>
-                <p className="text-xs text-blue-600 mt-1">7 CBT • 4 Paper-based</p>
+                <p className="text-2xl text-blue-950">0</p>
+                <p className="text-xs text-blue-600 mt-1">0 CBT • 0 Paper-based</p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-green-900">Submitted</p>
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-2xl text-green-950">8</p>
-                <p className="text-xs text-green-600 mt-1">5 CBT • 3 Paper</p>
+                <p className="text-2xl text-green-950">0</p>
+                <p className="text-xs text-green-600 mt-1">0 CBT • 0 Paper</p>
               </div>
               <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm font-medium text-amber-900">Draft</p>
                   <FileEdit className="w-5 h-5 text-amber-600" />
                 </div>
-                <p className="text-2xl text-amber-950">3</p>
-                <p className="text-xs text-amber-600 mt-1">2 CBT • 1 Paper</p>
+                <p className="text-2xl text-amber-950">0</p>
+                <p className="text-xs text-amber-600 mt-1">0 CBT • 0 Paper</p>
               </div>
             </div>
             <div className="space-y-3">
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-sm">Mid-Term Test - Mathematics</h4>
-                      <Badge className="bg-blue-100 text-blue-700">CBT</Badge>
-                      <Badge className="bg-green-100 text-green-700">Submitted</Badge>
-                    </div>
-                    <p className="text-xs text-gray-600">JSS 3A • 40 Questions • 60 Minutes</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="text-xs">
-                    View Details
-                  </Button>
-                </div>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-sm">Weekly Quiz - Algebra</h4>
-                      <Badge className="bg-purple-100 text-purple-700">Paper</Badge>
-                      <Badge className="bg-amber-100 text-amber-700">Draft</Badge>
-                    </div>
-                    <p className="text-xs text-gray-600">JSS 2B • 15 Questions • 30 Minutes</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="text-xs">
-                    Continue Editing
-                  </Button>
-                </div>
-              </div>
-              <div className="text-center py-2">
-                <Button variant="link" className="text-blue-600 text-xs" onClick={() => onNavigate && onNavigate('/assessments')}>
-                  View All Assessments →
+              <div className="text-center py-6 border-2 border-dashed rounded-lg">
+                <Monitor className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">No assessments created yet</p>
+                <Button variant="link" size="sm" className="text-blue-600" onClick={() => onNavigate && onNavigate('/assessments')}>
+                  Create your first assessment
                 </Button>
               </div>
             </div>
@@ -475,11 +377,10 @@ export const ClassroomOverview: React.FC<ClassroomOverviewProps> = ({ onNavigate
               {duties.map((duty) => (
                 <div
                   key={duty.id}
-                  className={`p-3 rounded-lg border ${
-                    duty.priority === 'high'
-                      ? 'bg-red-50 border-red-200'
-                      : 'bg-blue-50 border-blue-200'
-                  }`}
+                  className={`p-3 rounded-lg border ${duty.priority === 'high'
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-blue-50 border-blue-200'
+                    }`}
                 >
                   <div className="flex items-start gap-2">
                     {duty.priority === 'high' ? (
@@ -571,11 +472,10 @@ export const ClassroomOverview: React.FC<ClassroomOverviewProps> = ({ onNavigate
               {principalFeedback.map((feedback) => (
                 <div
                   key={feedback.id}
-                  className={`p-3 sm:p-4 rounded-lg border ${
-                    feedback.status === 'approved'
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-amber-50 border-amber-200'
-                  }`}
+                  className={`p-3 sm:p-4 rounded-lg border ${feedback.status === 'approved'
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-amber-50 border-amber-200'
+                    }`}
                 >
                   <div className="flex items-start gap-2 mb-2">
                     {feedback.status === 'approved' ? (

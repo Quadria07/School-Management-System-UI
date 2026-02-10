@@ -61,135 +61,11 @@ export const LearningHub: React.FC = () => {
   const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
   const [showMaterialViewer, setShowMaterialViewer] = useState(false);
 
-  const [subjects] = useState<Subject[]>([
-    {
-      id: '1',
-      name: 'Mathematics',
-      teacher: 'Mr. Adeyemi',
-      totalNotes: 24,
-      lastUpdated: '2 days ago',
-      color: 'bg-blue-500',
-    },
-    {
-      id: '2',
-      name: 'English Language',
-      teacher: 'Mrs. Okonkwo',
-      totalNotes: 20,
-      lastUpdated: '1 day ago',
-      color: 'bg-purple-500',
-    },
-    {
-      id: '3',
-      name: 'Biology',
-      teacher: 'Dr. Ibrahim',
-      totalNotes: 18,
-      lastUpdated: '3 days ago',
-      color: 'bg-green-500',
-    },
-    {
-      id: '4',
-      name: 'Chemistry',
-      teacher: 'Mrs. Eze',
-      totalNotes: 22,
-      lastUpdated: '1 day ago',
-      color: 'bg-red-500',
-    },
-    {
-      id: '5',
-      name: 'Physics',
-      teacher: 'Mr. Balogun',
-      totalNotes: 21,
-      lastUpdated: '4 days ago',
-      color: 'bg-amber-500',
-    },
-    {
-      id: '6',
-      name: 'Economics',
-      teacher: 'Mrs. Adeleke',
-      totalNotes: 16,
-      lastUpdated: '1 week ago',
-      color: 'bg-teal-500',
-    },
-  ]);
+  const [subjects] = useState<Subject[]>([]);
 
-  const [lessonNotes] = useState<LessonNote[]>([
-    {
-      id: '1',
-      title: 'Quadratic Equations',
-      topic: 'Solving quadratic equations using the quadratic formula',
-      week: 'Week 12',
-      date: 'Dec 28, 2025',
-      status: 'approved',
-      materialsCount: 4,
-    },
-    {
-      id: '2',
-      title: 'Simultaneous Equations',
-      topic: 'Solving two equations with two unknowns',
-      week: 'Week 11',
-      date: 'Dec 21, 2025',
-      status: 'approved',
-      materialsCount: 3,
-    },
-    {
-      id: '3',
-      title: 'Logarithms and Indices',
-      topic: 'Laws of logarithms and their applications',
-      week: 'Week 10',
-      date: 'Dec 14, 2025',
-      status: 'approved',
-      materialsCount: 5,
-    },
-    {
-      id: '4',
-      title: 'Trigonometry Basics',
-      topic: 'Sine, cosine, and tangent ratios',
-      week: 'Week 9',
-      date: 'Dec 7, 2025',
-      status: 'approved',
-      materialsCount: 6,
-    },
-    {
-      id: '5',
-      title: 'Coordinate Geometry',
-      topic: 'Distance between two points and midpoint formula',
-      week: 'Week 8',
-      date: 'Nov 30, 2025',
-      status: 'approved',
-      materialsCount: 3,
-    },
-  ]);
+  const [lessonNotes] = useState<LessonNote[]>([]);
 
-  const [materials] = useState<Material[]>([
-    {
-      id: '1',
-      name: 'Quadratic Equations - Lesson Note.pdf',
-      type: 'pdf',
-      size: '2.4 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-    {
-      id: '2',
-      name: 'Solving Quadratic Equations - Video Tutorial.mp4',
-      type: 'video',
-      size: '45.8 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-    {
-      id: '3',
-      name: 'Practice Problems.pdf',
-      type: 'pdf',
-      size: '1.2 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-    {
-      id: '4',
-      name: 'Quadratic Formula Derivation.ppt',
-      type: 'ppt',
-      size: '3.5 MB',
-      uploadedDate: 'Dec 28, 2025',
-    },
-  ]);
+  const [materials] = useState<Material[]>([]);
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -497,8 +373,8 @@ export const LearningHub: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{selectedMaterial?.name}</DialogTitle>
             <DialogDescription>
-              {selectedMaterial?.type === 'video' 
-                ? 'Watch the video tutorial below' 
+              {selectedMaterial?.type === 'video'
+                ? 'Watch the video tutorial below'
                 : 'View the study material below'}
             </DialogDescription>
           </DialogHeader>

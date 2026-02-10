@@ -43,56 +43,7 @@ export const AssignmentsHub: React.FC = () => {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const [submissionText, setSubmissionText] = useState('');
 
-  const [assignments] = useState<Assignment[]>([
-    {
-      id: '1',
-      title: 'Essay: The Impact of Technology on Education',
-      subject: 'English Language',
-      teacher: 'Mrs. Okonkwo',
-      description:
-        'Write a comprehensive essay (500-700 words) discussing how technology has transformed modern education. Include examples and personal observations.',
-      dueDate: 'Tomorrow, 5:00 PM',
-      maxScore: 20,
-      status: 'new',
-    },
-    {
-      id: '2',
-      title: 'Chapter 5 Review Questions',
-      subject: 'Biology',
-      teacher: 'Dr. Ibrahim',
-      description: 'Answer all questions from Chapter 5 (Questions 1-15) in your textbook.',
-      dueDate: 'Thursday, 3:00 PM',
-      maxScore: 15,
-      status: 'submitted',
-      submittedDate: 'Yesterday, 2:30 PM',
-    },
-    {
-      id: '3',
-      title: 'Quadratic Equations Practice Set',
-      subject: 'Mathematics',
-      teacher: 'Mr. Adeyemi',
-      description:
-        'Solve all 20 problems on quadratic equations. Show all working clearly.',
-      dueDate: 'Dec 20, 2025',
-      maxScore: 20,
-      status: 'graded',
-      score: 18,
-      feedback:
-        'Excellent work! You demonstrated a strong understanding of the quadratic formula. Minor error in question 15.',
-      submittedDate: 'Dec 18, 2025',
-    },
-    {
-      id: '4',
-      title: 'Physics Lab Report - Motion and Forces',
-      subject: 'Physics',
-      teacher: 'Mr. Balogun',
-      description:
-        'Submit a detailed lab report on the motion and forces experiment conducted last week.',
-      dueDate: 'Next Monday',
-      maxScore: 25,
-      status: 'new',
-    },
-  ]);
+  const [assignments] = useState<Assignment[]>([]);
 
   const filteredAssignments = assignments.filter((a) => a.status === selectedTab);
 
@@ -144,31 +95,28 @@ export const AssignmentsHub: React.FC = () => {
       <div className="flex gap-2 border-b">
         <Button
           variant="ghost"
-          className={`rounded-none ${
-            selectedTab === 'new' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
-          }`}
+          className={`rounded-none ${selectedTab === 'new' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-600'
+            }`}
           onClick={() => setSelectedTab('new')}
         >
           New ({assignments.filter((a) => a.status === 'new').length})
         </Button>
         <Button
           variant="ghost"
-          className={`rounded-none ${
-            selectedTab === 'submitted'
+          className={`rounded-none ${selectedTab === 'submitted'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-600'
-          }`}
+            }`}
           onClick={() => setSelectedTab('submitted')}
         >
           Submitted ({assignments.filter((a) => a.status === 'submitted').length})
         </Button>
         <Button
           variant="ghost"
-          className={`rounded-none ${
-            selectedTab === 'graded'
+          className={`rounded-none ${selectedTab === 'graded'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-600'
-          }`}
+            }`}
           onClick={() => setSelectedTab('graded')}
         >
           Graded ({assignments.filter((a) => a.status === 'graded').length})

@@ -130,11 +130,9 @@ Teacher Enters → Teacher Submits → Principal Approves → Principal Publishe
 │   └── styles/                        # CSS & Tailwind
 │
 ├── guidelines/                         # System guidelines (ignore)
-├── supabase/                           # System files (ignore - your dev will create fresh)
-└── utils/supabase/                     # System files (ignore - your dev will create fresh)
 ```
 
-**Note for Backend Developer:** Ignore the `/supabase/` and `/utils/supabase/` system files. You will create your own fresh Supabase backend following the BACKEND_DEVELOPER_GUIDE.md.
+**Note for Backend Developer:** You will create your own fresh PHP/MySQL backend following the BACKEND_DEVELOPER_GUIDE.md.
 
 ---
 
@@ -192,11 +190,11 @@ All data is currently stored in **localStorage**:
 - **date-fns** - Date utilities
 
 ### Backend (To Be Implemented)
-- **Supabase** - Backend as a service
-- **PostgreSQL** - Database
-- **Supabase Edge Functions** - Serverless functions (Hono.js)
-- **Supabase Auth** - JWT authentication
-- **Supabase Storage** - File storage
+- **PHP** - Server-side scripting (Vanilla or Framework)
+- **MySQL/MariaDB** - Database
+- **REST API** - JSON-based API endpoints
+- **JWT** - JSON Web Token authentication
+- **cPanel** - Deployment environment
 
 ---
 
@@ -209,7 +207,7 @@ This comprehensive guide contains:
 - ✅ All 80+ API endpoints with specifications
 - ✅ Critical approval workflow logic
 - ✅ Auto-grading algorithm for CBT exams
-- ✅ Row Level Security (RLS) policies
+- ✅ Database security best practices
 - ✅ Authentication & authorization middleware
 - ✅ Test scenarios and credentials
 - ✅ Frontend integration instructions
@@ -226,9 +224,8 @@ This comprehensive guide contains:
 1. Maintain all 7 user roles
 2. Enforce approval workflows (Teacher → Principal → Students)
 3. Implement auto-grading for CBT exams
-4. Row Level Security on all tables
-5. JWT authentication
-6. File upload for student photos (5MB max)
+4. Secure API with JWT
+5. File upload for student photos (5MB max)
 
 ---
 
@@ -279,11 +276,11 @@ Student passport photos are validated:
 ### Frontend Deployment
 ```bash
 npm run build
-# Deploy the /dist folder to any static hosting
+# Deploy the /dist folder to public_html in cPanel
 ```
 
 ### Backend Deployment
-See `/BACKEND_DEVELOPER_GUIDE.md` for Supabase deployment instructions.
+See `/BACKEND_DEVELOPER_GUIDE.md` for PHP/MySQL deployment instructions.
 
 ---
 

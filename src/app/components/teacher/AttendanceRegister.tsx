@@ -1,6 +1,15 @@
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import * as dataFlowService from '@/utils/dataFlowService';
-import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Check, X, Clock, Users, Download, TrendingDown, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import * as dataFlowService from '../../../utils/dataFlowService';
+import { useAuth } from '../../../contexts/AuthContext';
+import { AttendanceBroadsheet } from '../principal/AttendanceBroadsheet';
 
 interface Student {
   id: string;
@@ -18,72 +27,55 @@ export const AttendanceRegister: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState('Mathematics');
   const [showBroadsheet, setShowBroadsheet] = useState(false);
 
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: '1',
-      name: 'Adebayo Oluwaseun',
-      admissionNumber: 'BFO/2023/001',
-      status: 'present',
-      attendanceRate: 98,
-      totalAbsences: 1,
-    },
-    {
-      id: '2',
-      name: 'Chioma Nwosu',
-      admissionNumber: 'BFO/2023/002',
-      status: 'present',
-      attendanceRate: 100,
-      totalAbsences: 0,
-    },
-    {
-      id: '3',
-      name: 'Ibrahim Yusuf',
-      admissionNumber: 'BFO/2023/003',
-      status: 'late',
-      attendanceRate: 95,
-      totalAbsences: 2,
-    },
-    {
-      id: '4',
-      name: 'Grace Okonkwo',
-      admissionNumber: 'BFO/2023/004',
-      status: 'present',
-      attendanceRate: 97,
-      totalAbsences: 1,
-    },
-    {
-      id: '5',
-      name: 'Daniel Akintola',
-      admissionNumber: 'BFO/2023/005',
-      status: 'absent',
-      attendanceRate: 85,
-      totalAbsences: 6,
-    },
-    {
-      id: '6',
-      name: 'Fatima Abdullahi',
-      admissionNumber: 'BFO/2023/006',
-      status: 'present',
-      attendanceRate: 92,
-      totalAbsences: 3,
-    },
-    {
-      id: '7',
-      name: 'Emmanuel Okafor',
-      admissionNumber: 'BFO/2023/007',
-      status: 'present',
-      attendanceRate: 96,
-      totalAbsences: 2,
-    },
-    {
-      id: '8',
-      name: 'Blessing Eze',
-      admissionNumber: 'BFO/2023/008',
-      status: 'present',
-      attendanceRate: 99,
-      totalAbsences: 0,
-    },
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Initial load: fetch classes
+  React.useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const res = await TeacherAPI.getClasses();
+        if (res.status === 'success' && res.data) {
+          const classes = res.data as any[];
+          setTeacherClasses(classes);
+          if (classes.length > 0 && !selectedClass) {
+            setSelectedClass(classes[0].name || classes[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      }
+    };
+    fetchClasses();
+  }, []);
+
+  // Fetch students when class changes
+  React.useEffect(() => {
+    const fetchStudents = async () => {
+      if (!selectedClass) return;
+      setLoading(true);
+      try {
+        const res = await TeacherAPI.getStudentsByClass(selectedClass);
+        if (res.status === 'success' && res.data) {
+          const fetchedStudents = (res.data as any[]).map(s => ({
+            id: s.id,
+            name: s.name || s.studentName,
+            admissionNumber: s.admissionNumber,
+            status: null,
+            attendanceRate: 95, // Mock value if not in API
+            totalAbsences: 0
+          }));
+          setStudents(fetchedStudents);
+        }
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStudents();
+  }, [selectedClass]);
 
   const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
     setStudents((prev) =>
@@ -106,7 +98,7 @@ export const AttendanceRegister: React.FC = () => {
       toast.error(`Please mark attendance for ${unmarked.length} student(s)`);
       return;
     }
-    
+
     // ✅ Save attendance to localStorage
     const attendanceRecord: dataFlowService.AttendanceRecord = {
       id: `att_${Date.now()}_${selectedClass}`,
@@ -123,7 +115,7 @@ export const AttendanceRegister: React.FC = () => {
       })),
       timestamp: new Date().toISOString(),
     };
-    
+
     dataFlowService.saveAttendanceRecord(attendanceRecord);
     toast.success('Attendance saved successfully');
   };
@@ -134,7 +126,7 @@ export const AttendanceRegister: React.FC = () => {
       toast.error(`Please mark attendance for ${unmarked.length} student(s)`);
       return;
     }
-    
+
     // ✅ Save and submit attendance to localStorage
     const attendanceRecord: dataFlowService.AttendanceRecord = {
       id: `att_${Date.now()}_${selectedClass}`,
@@ -151,7 +143,7 @@ export const AttendanceRegister: React.FC = () => {
       })),
       timestamp: new Date().toISOString(),
     };
-    
+
     dataFlowService.saveAttendanceRecord(attendanceRecord);
     toast.success('Attendance submitted to Administration', {
       description: `${presentCount} present, ${absentCount} absent, ${lateCount} late`,
@@ -178,8 +170,8 @@ export const AttendanceRegister: React.FC = () => {
               Comprehensive attendance register for the term.
             </DialogDescription>
           </DialogHeader>
-          <AttendanceBroadsheet 
-            onClose={() => setShowBroadsheet(false)} 
+          <AttendanceBroadsheet
+            onClose={() => setShowBroadsheet(false)}
             classLevel={selectedClass}
           />
         </DialogContent>
@@ -348,10 +340,17 @@ export const AttendanceRegister: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="JSS 3A">JSS 3A</SelectItem>
-                    <SelectItem value="JSS 2B">JSS 2B</SelectItem>
-                    <SelectItem value="JSS 1C">JSS 1C</SelectItem>
-                    <SelectItem value="SSS 2A">SSS 2A</SelectItem>
+                    {teacherClasses.map(c => (
+                      <SelectItem key={c.id || c.name} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                    {teacherClasses.length === 0 && (
+                      <>
+                        <SelectItem value="JSS 3A">JSS 3A</SelectItem>
+                        <SelectItem value="JSS 2B">JSS 2B</SelectItem>
+                        <SelectItem value="JSS 1C">JSS 1C</SelectItem>
+                        <SelectItem value="SSS 2A">SSS 2A</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -408,11 +407,10 @@ export const AttendanceRegister: React.FC = () => {
                       size="sm"
                       variant={student.status === 'present' ? 'default' : 'outline'}
                       onClick={() => handleStatusChange(student.id, 'present')}
-                      className={`flex-1 sm:flex-none ${
-                        student.status === 'present'
-                          ? 'bg-green-600 hover:bg-green-700'
-                          : ''
-                      }`}
+                      className={`flex-1 sm:flex-none ${student.status === 'present'
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : ''
+                        }`}
                     >
                       <Check className="w-3 h-3 sm:mr-1" />
                       <span className="hidden sm:inline">Present</span>
@@ -421,11 +419,10 @@ export const AttendanceRegister: React.FC = () => {
                       size="sm"
                       variant={student.status === 'late' ? 'default' : 'outline'}
                       onClick={() => handleStatusChange(student.id, 'late')}
-                      className={`flex-1 sm:flex-none ${
-                        student.status === 'late'
-                          ? 'bg-amber-600 hover:bg-amber-700'
-                          : ''
-                      }`}
+                      className={`flex-1 sm:flex-none ${student.status === 'late'
+                        ? 'bg-amber-600 hover:bg-amber-700'
+                        : ''
+                        }`}
                     >
                       <Clock className="w-3 h-3 sm:mr-1" />
                       <span className="hidden sm:inline">Late</span>
@@ -434,9 +431,8 @@ export const AttendanceRegister: React.FC = () => {
                       size="sm"
                       variant={student.status === 'absent' ? 'default' : 'outline'}
                       onClick={() => handleStatusChange(student.id, 'absent')}
-                      className={`flex-1 sm:flex-none ${
-                        student.status === 'absent' ? 'bg-red-600 hover:bg-red-700' : ''
-                      }`}
+                      className={`flex-1 sm:flex-none ${student.status === 'absent' ? 'bg-red-600 hover:bg-red-700' : ''
+                        }`}
                     >
                       <X className="w-3 h-3 sm:mr-1" />
                       <span className="hidden sm:inline">Absent</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign,
   TrendingUp,
@@ -11,6 +11,7 @@ import {
   CreditCard,
   Wallet,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -29,6 +30,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
+import { BursarAPI } from '../../../utils/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Transaction {
   id: string;
@@ -43,126 +46,103 @@ interface Transaction {
 }
 
 export const FinancialCommandCenter: React.FC = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [financialStats, setFinancialStats] = useState<any>(null);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [showPettyCashDialog, setShowPettyCashDialog] = useState(false);
   const [pettyCashAmount, setPettyCashAmount] = useState('');
   const [pettyCashPurpose, setPettyCashPurpose] = useState('');
 
-  // Financial Summary Data
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, transRes] = await Promise.all([
+          BursarAPI.getFinancialStats(),
+          BursarAPI.getTransactions(10)
+        ]);
+
+        if (statsRes.status === 'success') setFinancialStats(statsRes.data);
+        if (transRes.status === 'success') {
+          const transData = (transRes.data || []) as any[];
+          setRecentTransactions(transData.map(t => ({
+            id: t.id,
+            type: t.type,
+            amount: parseFloat(t.amount),
+            description: t.description,
+            category: t.category,
+            method: t.payment_method || 'bank',
+            reference: t.reference_number || 'N/A',
+            timestamp: t.created_at,
+            status: t.status === 'approved' ? 'completed' : 'pending'
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching bursar data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Financial Summary Data (Derived from API)
   const currentTerm = 'First Term 2024/2025';
-  const totalExpectedFees = 45000000; // ₦45M
-  const totalCollected = 38250000; // ₦38.25M
-  const totalOutstanding = 6750000; // ₦6.75M
-  const collectionRate = (totalCollected / totalExpectedFees) * 100;
+  const totalExpectedFees = financialStats?.total_expected || 0;
+  const totalCollected = financialStats?.total_collected || 0;
+  const totalOutstanding = totalExpectedFees - totalCollected;
+  const collectionRate = totalExpectedFees > 0 ? (totalCollected / totalExpectedFees) * 100 : 0;
 
-  const monthlyBudget = 3500000; // ₦3.5M
-  const monthlySpend = 2875000; // ₦2.875M
+  const monthlyBudget = financialStats?.monthly_budget || 0;
+  const monthlySpend = financialStats?.monthly_spend || 0;
   const budgetRemaining = monthlyBudget - monthlySpend;
-  const budgetUsage = (monthlySpend / monthlyBudget) * 100;
-
-  const [recentTransactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      type: 'income',
-      amount: 218000,
-      description: 'Tuition Payment - Oluwatunde Adebayo (JSS 3A)',
-      category: 'Tuition Fees',
-      method: 'online',
-      reference: 'PAY-2025-001523',
-      timestamp: '2 mins ago',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      type: 'income',
-      amount: 145000,
-      description: 'School Fees - Chinedu Okoro (SSS 2B)',
-      category: 'School Fees',
-      method: 'bank',
-      reference: 'TRF-2025-000892',
-      timestamp: '15 mins ago',
-      status: 'pending',
-    },
-    {
-      id: '3',
-      type: 'expense',
-      amount: 85000,
-      description: 'Science Lab Equipment Purchase',
-      category: 'Equipment',
-      method: 'bank',
-      reference: 'PV-2025-00234',
-      timestamp: '1 hour ago',
-      status: 'completed',
-    },
-    {
-      id: '4',
-      type: 'income',
-      amount: 198000,
-      description: 'Full Payment - Amina Hassan (JSS 1A)',
-      category: 'School Fees',
-      method: 'online',
-      reference: 'PAY-2025-001520',
-      timestamp: '2 hours ago',
-      status: 'completed',
-    },
-    {
-      id: '5',
-      type: 'expense',
-      amount: 45000,
-      description: 'Diesel for Generator',
-      category: 'Utilities',
-      method: 'cash',
-      reference: 'PV-2025-00233',
-      timestamp: '3 hours ago',
-      status: 'completed',
-    },
-    {
-      id: '6',
-      type: 'income',
-      amount: 175000,
-      description: 'Term Payment - Ibrahim Musa (SSS 1C)',
-      category: 'Tuition Fees',
-      method: 'bank',
-      reference: 'TRF-2025-000888',
-      timestamp: '4 hours ago',
-      status: 'completed',
-    },
-    {
-      id: '7',
-      type: 'expense',
-      amount: 120000,
-      description: 'Office Supplies & Stationery',
-      category: 'Administrative',
-      method: 'bank',
-      reference: 'PV-2025-00232',
-      timestamp: '5 hours ago',
-      status: 'completed',
-    },
-    {
-      id: '8',
-      type: 'income',
-      amount: 218000,
-      description: 'Tuition Payment - Grace Adeola (JSS 2A)',
-      category: 'Tuition Fees',
-      method: 'online',
-      reference: 'PAY-2025-001518',
-      timestamp: '6 hours ago',
-      status: 'completed',
-    },
-  ]);
+  const budgetUsage = monthlyBudget > 0 ? (monthlySpend / monthlyBudget) * 100 : 0;
 
   const handleGenerateQuickReport = () => {
     toast.success('Daily collection report generated successfully!');
   };
 
-  const handleLogPettyCash = () => {
+  const handleLogPettyCash = async () => {
     if (!pettyCashAmount || !pettyCashPurpose) {
       toast.error('Please fill in all fields');
       return;
     }
-    toast.success(`Petty cash expense of ₦${parseFloat(pettyCashAmount).toLocaleString()} logged successfully`);
-    setShowPettyCashDialog(false);
-    setPettyCashAmount('');
-    setPettyCashPurpose('');
+
+    try {
+      const response = await BursarAPI.logPettyCash({
+        amount: pettyCashAmount,
+        description: pettyCashPurpose
+      });
+
+      if (response.status === 'success') {
+        toast.success(`Petty cash expense of ₦${parseFloat(pettyCashAmount).toLocaleString()} logged successfully`);
+        setShowPettyCashDialog(false);
+        setPettyCashAmount('');
+        setPettyCashPurpose('');
+        // Refresh transactions
+        const transRes = await BursarAPI.getTransactions(10);
+        if (transRes.status === 'success') {
+          const transData = (transRes.data || []) as any[];
+          setRecentTransactions(transData.map(t => ({
+            id: t.id,
+            type: t.type,
+            amount: parseFloat(t.amount),
+            description: t.description,
+            category: t.category,
+            method: t.payment_method || 'bank',
+            reference: t.reference_number || 'N/A',
+            timestamp: t.created_at,
+            status: t.status === 'approved' ? 'completed' : 'pending'
+          })));
+        }
+      } else {
+        toast.error(response.message || 'Failed to log petty cash');
+      }
+    } catch (error) {
+      toast.error('Error logging petty cash');
+    }
   };
 
   return (
@@ -193,98 +173,111 @@ export const FinancialCommandCenter: React.FC = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          <span className="ml-2 text-gray-600">Loading financial data...</span>
+        </div>
+      )}
+
       {/* Revenue Gauge */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3 text-blue-950">Revenue Gauge</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-blue-700">Total Expected Fees</CardDescription>
-              <CardTitle className="text-3xl text-blue-950">
-                ₦{(totalExpectedFees / 1000000).toFixed(1)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-blue-700">{currentTerm}</p>
-            </CardContent>
-          </Card>
+      {!loading && (
+        <>
+          <div>
+            <h2 className="text-lg font-semibold mb-3 text-blue-950">Revenue Gauge</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardDescription className="text-blue-700">Total Expected Fees</CardDescription>
+                  <CardTitle className="text-3xl text-blue-950">
+                    ₦{(totalExpectedFees / 1000000).toFixed(1)}M
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-blue-700">{currentTerm}</p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-green-700">Total Collected</CardDescription>
-              <CardTitle className="text-3xl text-green-950">
-                ₦{(totalCollected / 1000000).toFixed(2)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1 text-green-700">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="text-sm font-medium">{collectionRate.toFixed(1)}% Collected</span>
-                </div>
-                <Progress value={collectionRate} className="h-2 [&>div]:bg-green-600" />
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                <CardHeader className="pb-3">
+                  <CardDescription className="text-green-700">Total Collected</CardDescription>
+                  <CardTitle className="text-3xl text-green-950">
+                    ₦{(totalCollected / 1000000).toFixed(2)}M
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1 text-green-700">
+                      <TrendingUp className="w-4 h-4" />
+                      <span className="text-sm font-medium">{collectionRate.toFixed(1)}% Collected</span>
+                    </div>
+                    <Progress value={collectionRate} className="h-2 [&>div]:bg-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-amber-700">Outstanding Balance</CardDescription>
-              <CardTitle className="text-3xl text-amber-950">
-                ₦{(totalOutstanding / 1000000).toFixed(2)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-amber-700">Requires follow-up</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+                <CardHeader className="pb-3">
+                  <CardDescription className="text-amber-700">Outstanding Balance</CardDescription>
+                  <CardTitle className="text-3xl text-amber-950">
+                    ₦{(totalOutstanding / 1000).toFixed(2)}K
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-amber-700">Requires follow-up</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-      {/* Expense Tracker */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3 text-blue-950">Monthly Expense Tracker</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-purple-700">Monthly Budget</CardDescription>
-              <CardTitle className="text-3xl text-purple-950">
-                ₦{(monthlyBudget / 1000000).toFixed(2)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-purple-700">January 2025</p>
-            </CardContent>
-          </Card>
+          {/* Expense Tracker */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3 text-blue-950">Monthly Expense Tracker</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <CardHeader className="pb-3">
+                  <CardDescription className="text-purple-700">Monthly Budget</CardDescription>
+                  <CardTitle className="text-3xl text-purple-950">
+                    ₦{(monthlyBudget / 1000).toFixed(2)}K
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-purple-700">{new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}</p>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-red-700">Current Spend</CardDescription>
-              <CardTitle className="text-3xl text-red-950">
-                ₦{(monthlySpend / 1000000).toFixed(2)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-red-700">{budgetUsage.toFixed(1)}% of budget used</p>
-                <Progress value={budgetUsage} className="h-2 [&>div]:bg-red-600" />
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                <CardHeader className="pb-3">
+                  <CardDescription className="text-red-700">Current Spend</CardDescription>
+                  <CardTitle className="text-3xl text-red-950">
+                    ₦{(monthlySpend / 1000).toFixed(2)}K
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-sm text-red-700">{budgetUsage.toFixed(1)}% of budget used</p>
+                    <Progress value={budgetUsage} className="h-2 [&>div]:bg-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
-            <CardHeader className="pb-3">
-              <CardDescription className="text-teal-700">Budget Remaining</CardDescription>
-              <CardTitle className="text-3xl text-teal-950">
-                ₦{(budgetRemaining / 1000000).toFixed(2)}M
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-teal-700">Available for allocation</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              <Card className="bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+                <CardHeader className="pb-3">
+                  <CardDescription className="text-teal-700">Budget Remaining</CardDescription>
+                  <CardTitle className="text-3xl text-teal-950">
+                    ₦{(budgetRemaining / 1000).toFixed(2)}K
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-teal-700">Available for allocation</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </>
+      )}
+
 
       {/* Recent Activity */}
       <Card>
@@ -341,9 +334,8 @@ export const FinancialCommandCenter: React.FC = () => {
                       <div>
                         <p className="text-gray-600">Amount:</p>
                         <p
-                          className={`font-semibold ${
-                            transaction.type === 'income' ? 'text-green-700' : 'text-red-700'
-                          }`}
+                          className={`font-semibold ${transaction.type === 'income' ? 'text-green-700' : 'text-red-700'
+                            }`}
                         >
                           {transaction.type === 'income' ? '+' : '-'}₦
                           {transaction.amount.toLocaleString()}

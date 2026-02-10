@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import * as dataFlowService from '@/utils/dataFlowService';
+import * as dataFlowService from '../../../utils/dataFlowService';
 import { Calendar } from '../ui/calendar';
 import { format } from 'date-fns';
 import { ScrollArea } from '../ui/scroll-area';
@@ -103,39 +103,11 @@ export const ExaminationManagement: React.FC = () => {
   // Sync result sets status from localStorage
   React.useEffect(() => {
     const checkSubmissionStatus = () => {
-        const savedStatus = localStorage.getItem('gradebook_submitted_classes');
-        const statusMap = savedStatus ? JSON.parse(savedStatus) : {};
-        
-        // Base mock data
-        const baseSets: ResultSet[] = [
-            { id: 'RS001', class: 'SSS 1', term: 'First Term', session: '2024/2025', status: 'draft', submittedBy: 'Mrs. Sarah Johnson', submittedDate: '2 hours ago', type: 'Term' },
-            { id: 'RS002', class: 'JSS 2', term: 'First Term', session: '2024/2025', status: 'locked', submittedBy: 'Mr. David Okafor', submittedDate: '1 day ago', type: 'Term' },
-        ];
-        
-        // Dynamic JSS 3A entries
-        const jss3aCA: ResultSet = {
-            id: 'RS-JSS3A-CA',
-            class: 'JSS 3A',
-            term: 'First Term',
-            session: '2024/2025',
-            status: statusMap['JSS 3A_ca'] ? 'locked' : 'draft',
-            submittedBy: 'Mrs. Bello',
-            submittedDate: 'Just now',
-            type: 'CA'
-        };
-        
-        const jss3aTerm: ResultSet = {
-            id: 'RS-JSS3A-TERM',
-            class: 'JSS 3A',
-            term: 'First Term',
-            session: '2024/2025',
-            status: statusMap['JSS 3A_term'] ? 'locked' : 'draft',
-            submittedBy: 'Mrs. Bello',
-            submittedDate: 'Just now',
-            type: 'Term'
-        };
+      const savedStatus = localStorage.getItem('gradebook_submitted_classes');
+      const statusMap = savedStatus ? JSON.parse(savedStatus) : {};
 
-        setResultSets([...baseSets, jss3aCA, jss3aTerm]);
+      // Base mock data
+      setResultSets([]);
     };
 
     checkSubmissionStatus();
@@ -157,11 +129,11 @@ export const ExaminationManagement: React.FC = () => {
     // Update localStorage to unlock
     const savedStatus = localStorage.getItem('gradebook_submitted_classes');
     const statusMap = savedStatus ? JSON.parse(savedStatus) : {};
-    
+
     // Construct key
     const keySuffix = targetResult.type === 'CA' ? '_ca' : '_term';
     const key = targetResult.type ? `${targetResult.class}${keySuffix}` : targetResult.class;
-    
+
     statusMap[key] = false;
     localStorage.setItem('gradebook_submitted_classes', JSON.stringify(statusMap));
 
@@ -172,468 +144,14 @@ export const ExaminationManagement: React.FC = () => {
   };
 
   // All student data for different classes
-  const allBroadsheetData: BroadsheetData[] = [
-    // GRADE 4 students
-    {
-      sn: 1,
-      studentName: 'ADEYEMI OLUWASEUN',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 20.00, total: 108.00, average: 72.00, position: 2 },
-      mathematics: { first: 65.00, second: 23.00, third: 27.00, total: 115.00, average: 76.33, position: 1 },
-      basicScience: { first: 79.00, second: 27.00, third: 20.00, total: 126.00, average: 84.00, position: 1 },
-      prevocational: { first: 65.00, second: 11.00, third: 20.00, total: 96.00, average: 64.00, position: 6 },
-      nationalValues: { first: 65.00, second: 16.00, third: 20.00, total: 101.00, average: 67.33, position: 3 },
-      totalScore: 1315.85,
-      overallAverage: 73.37,
-      percentAverage: 352,
-      overallPosition: 1,
-      grade: 'A',
-      remarks: 'Excellent Performance'
-    },
-    {
-      sn: 2,
-      studentName: 'BAKARE TUNDE',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 12.00, total: 100.00, average: 70.00, position: 3 },
-      mathematics: { first: 65.00, second: 23.00, third: 27.00, total: 115.00, average: 76.33, position: 1 },
-      basicScience: { first: 65.00, second: 13.00, third: 20.00, total: 98.00, average: 65.33, position: 5 },
-      prevocational: { first: 65.00, second: 11.00, third: 20.00, total: 96.00, average: 64.00, position: 6 },
-      nationalValues: { first: 72.00, second: 23.00, third: 20.00, total: 115.00, average: 76.67, position: 1 },
-      totalScore: 1105.48,
-      overallAverage: 73.22,
-      percentAverage: 308,
-      overallPosition: 2,
-      grade: 'A',
-      remarks: 'Very Good'
-    },
-    {
-      sn: 3,
-      studentName: 'CHIDINMA NWOSU',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 12.00, total: 100.00, average: 70.00, position: 3 },
-      mathematics: { first: 65.00, second: 23.00, third: 27.00, total: 115.00, average: 76.33, position: 1 },
-      basicScience: { first: 65.00, second: 13.00, third: 20.00, total: 98.00, average: 65.33, position: 5 },
-      prevocational: { first: 65.00, second: 11.00, third: 20.00, total: 96.00, average: 64.00, position: 6 },
-      nationalValues: { first: 65.00, second: 16.00, third: 20.00, total: 101.00, average: 67.33, position: 3 },
-      totalScore: 866.17,
-      overallAverage: 45.23,
-      percentAverage: 202,
-      overallPosition: 3,
-      grade: 'C',
-      remarks: 'Good'
-    },
-    {
-      sn: 4,
-      studentName: 'DAMILOLA OGUNLEYE',
-      class: 'GRADE 4',
-      english: { first: 64.00, second: 23.00, third: 18.00, total: 105.00, average: 70.00, position: 3 },
-      mathematics: { first: 65.00, second: 17.00, third: 27.00, total: 109.00, average: 72.67, position: 2 },
-      basicScience: { first: 65.00, second: 27.00, third: 20.00, total: 112.00, average: 74.67, position: 2 },
-      prevocational: { first: 65.00, second: 24.00, third: 20.00, total: 109.00, average: 72.67, position: 2 },
-      nationalValues: { first: 65.00, second: 26.00, third: 20.00, total: 111.00, average: 74.00, position: 2 },
-      totalScore: 1119.56,
-      overallAverage: 63.36,
-      percentAverage: 297,
-      overallPosition: 4,
-      grade: 'B',
-      remarks: 'Very Good'
-    },
-    {
-      sn: 5,
-      studentName: 'EMMANUEL ADEBAYO',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 20.00, total: 108.00, average: 72.00, position: 2 },
-      mathematics: { first: 51.00, second: 23.00, third: 27.00, total: 101.00, average: 67.33, position: 3 },
-      basicScience: { first: 65.00, second: 13.00, third: 20.00, total: 98.00, average: 65.33, position: 5 },
-      prevocational: { first: 65.00, second: 11.00, third: 20.00, total: 96.00, average: 64.00, position: 6 },
-      nationalValues: { first: 65.00, second: 16.00, third: 20.00, total: 101.00, average: 67.33, position: 3 },
-      totalScore: 1110.56,
-      overallAverage: 59.33,
-      percentAverage: 296,
-      overallPosition: 5,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    {
-      sn: 6,
-      studentName: 'FATIMA MOHAMMED',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 20.00, total: 108.00, average: 72.00, position: 2 },
-      mathematics: { first: 51.00, second: 23.00, third: 27.00, total: 101.00, average: 67.33, position: 3 },
-      basicScience: { first: 65.00, second: 13.00, third: 20.00, total: 98.00, average: 65.33, position: 5 },
-      prevocational: { first: 65.00, second: 24.00, third: 20.00, total: 109.00, average: 72.67, position: 2 },
-      nationalValues: { first: 65.00, second: 16.00, third: 20.00, total: 101.00, average: 67.33, position: 3 },
-      totalScore: 1407.17,
-      overallAverage: 86.30,
-      percentAverage: 359,
-      overallPosition: 6,
-      grade: 'A',
-      remarks: 'Excellent'
-    },
-    {
-      sn: 7,
-      studentName: 'GRACE OKORO',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 12.00, total: 100.00, average: 70.00, position: 3 },
-      mathematics: { first: 51.00, second: 14.00, third: 27.00, total: 92.00, average: 61.33, position: 4 },
-      basicScience: { first: 28.00, second: 27.00, third: 20.00, total: 75.00, average: 50.00, position: 7 },
-      prevocational: { first: 65.00, second: 11.00, third: 20.00, total: 96.00, average: 64.00, position: 6 },
-      nationalValues: { first: 65.00, second: 16.00, third: 20.00, total: 101.00, average: 67.33, position: 3 },
-      totalScore: 1419.17,
-      overallAverage: 61.67,
-      percentAverage: 317,
-      overallPosition: 7,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    {
-      sn: 8,
-      studentName: 'IBRAHIM YUSUF',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 23.00, third: 12.00, total: 100.00, average: 70.00, position: 3 },
-      mathematics: { first: 65.00, second: 23.00, third: 27.00, total: 115.00, average: 76.33, position: 1 },
-      basicScience: { first: 28.00, second: 27.00, third: 20.00, total: 75.00, average: 50.00, position: 7 },
-      prevocational: { first: 65.00, second: 11.00, third: 20.00, total: 96.00, average: 64.00, position: 6 },
-      nationalValues: { first: 51.00, second: 11.00, third: 20.00, total: 82.00, average: 54.67, position: 6 },
-      totalScore: 1376.85,
-      overallAverage: 56.21,
-      percentAverage: 344,
-      overallPosition: 8,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    {
-      sn: 9,
-      studentName: 'JOY WILLIAMS',
-      class: 'GRADE 4',
-      english: { first: 65.00, second: 36.00, third: 12.00, total: 113.00, average: 75.33, position: 1 },
-      mathematics: { first: 65.00, second: 23.00, third: 27.00, total: 115.00, average: 76.33, position: 1 },
-      basicScience: { first: 28.00, second: 27.00, third: 20.00, total: 75.00, average: 50.00, position: 7 },
-      prevocational: { first: 51.00, second: 11.00, third: 20.00, total: 82.00, average: 54.67, position: 6 },
-      nationalValues: { first: 51.00, second: 11.00, third: 20.00, total: 82.00, average: 54.67, position: 6 },
-      totalScore: 1109.37,
-      overallAverage: 58.51,
-      percentAverage: 325,
-      overallPosition: 9,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    // GRADE 5 students
-    {
-      sn: 1,
-      studentName: 'AKINWALE SEGUN',
-      class: 'GRADE 5',
-      english: { first: 70.00, second: 25.00, third: 22.00, total: 117.00, average: 78.00, position: 1 },
-      mathematics: { first: 68.00, second: 24.00, third: 28.00, total: 120.00, average: 80.00, position: 1 },
-      basicScience: { first: 75.00, second: 26.00, third: 21.00, total: 122.00, average: 81.33, position: 1 },
-      prevocational: { first: 66.00, second: 20.00, third: 22.00, total: 108.00, average: 72.00, position: 2 },
-      nationalValues: { first: 70.00, second: 22.00, third: 21.00, total: 113.00, average: 75.33, position: 1 },
-      totalScore: 1450.00,
-      overallAverage: 77.33,
-      percentAverage: 365,
-      overallPosition: 1,
-      grade: 'A',
-      remarks: 'Outstanding Performance'
-    },
-    {
-      sn: 2,
-      studentName: 'BLESSING UCHENNA',
-      class: 'GRADE 5',
-      english: { first: 62.00, second: 22.00, third: 19.00, total: 103.00, average: 68.67, position: 3 },
-      mathematics: { first: 64.00, second: 21.00, third: 26.00, total: 111.00, average: 74.00, position: 2 },
-      basicScience: { first: 68.00, second: 24.00, third: 20.00, total: 112.00, average: 74.67, position: 2 },
-      prevocational: { first: 70.00, second: 23.00, third: 23.00, total: 116.00, average: 77.33, position: 1 },
-      nationalValues: { first: 65.00, second: 20.00, third: 20.00, total: 105.00, average: 70.00, position: 2 },
-      totalScore: 1320.00,
-      overallAverage: 72.93,
-      percentAverage: 340,
-      overallPosition: 2,
-      grade: 'A',
-      remarks: 'Excellent Work'
-    },
-    {
-      sn: 3,
-      studentName: 'DAVID OLUWATOBI',
-      class: 'GRADE 5',
-      english: { first: 68.00, second: 24.00, third: 20.00, total: 112.00, average: 74.67, position: 2 },
-      mathematics: { first: 60.00, second: 20.00, third: 25.00, total: 105.00, average: 70.00, position: 3 },
-      basicScience: { first: 64.00, second: 22.00, third: 19.00, total: 105.00, average: 70.00, position: 3 },
-      prevocational: { first: 62.00, second: 18.00, third: 21.00, total: 101.00, average: 67.33, position: 3 },
-      nationalValues: { first: 63.00, second: 19.00, third: 19.00, total: 101.00, average: 67.33, position: 3 },
-      totalScore: 1180.00,
-      overallAverage: 69.87,
-      percentAverage: 318,
-      overallPosition: 3,
-      grade: 'B',
-      remarks: 'Very Good'
-    },
-    {
-      sn: 4,
-      studentName: 'ESTHER OLUWATOYIN',
-      class: 'GRADE 5',
-      english: { first: 65.00, second: 21.00, third: 18.00, total: 104.00, average: 69.33, position: 4 },
-      mathematics: { first: 62.00, second: 20.00, third: 24.00, total: 106.00, average: 70.67, position: 4 },
-      basicScience: { first: 66.00, second: 22.00, third: 19.00, total: 107.00, average: 71.33, position: 4 },
-      prevocational: { first: 63.00, second: 19.00, third: 21.00, total: 103.00, average: 68.67, position: 4 },
-      nationalValues: { first: 64.00, second: 20.00, third: 19.00, total: 103.00, average: 68.67, position: 4 },
-      totalScore: 1210.00,
-      overallAverage: 69.73,
-      percentAverage: 320,
-      overallPosition: 4,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    {
-      sn: 5,
-      studentName: 'FUNMILAYO ADENIKE',
-      class: 'GRADE 5',
-      english: { first: 60.00, second: 20.00, third: 17.00, total: 97.00, average: 64.67, position: 5 },
-      mathematics: { first: 58.00, second: 19.00, third: 23.00, total: 100.00, average: 66.67, position: 5 },
-      basicScience: { first: 62.00, second: 21.00, third: 18.00, total: 101.00, average: 67.33, position: 5 },
-      prevocational: { first: 60.00, second: 18.00, third: 20.00, total: 98.00, average: 65.33, position: 5 },
-      nationalValues: { first: 61.00, second: 19.00, third: 18.00, total: 98.00, average: 65.33, position: 5 },
-      totalScore: 1140.00,
-      overallAverage: 65.87,
-      percentAverage: 295,
-      overallPosition: 5,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    // JSS 1 students
-    {
-      sn: 1,
-      studentName: 'ADELEKE TAIWO',
-      class: 'JSS 1',
-      english: { first: 72.00, second: 26.00, third: 23.00, total: 121.00, average: 80.67, position: 1 },
-      mathematics: { first: 70.00, second: 25.00, third: 29.00, total: 124.00, average: 82.67, position: 1 },
-      basicScience: { first: 74.00, second: 27.00, third: 22.00, total: 123.00, average: 82.00, position: 1 },
-      prevocational: { first: 68.00, second: 22.00, third: 23.00, total: 113.00, average: 75.33, position: 1 },
-      nationalValues: { first: 71.00, second: 24.00, third: 22.00, total: 117.00, average: 78.00, position: 1 },
-      totalScore: 1520.00,
-      overallAverage: 79.73,
-      percentAverage: 380,
-      overallPosition: 1,
-      grade: 'A',
-      remarks: 'Exceptional Performance'
-    },
-    {
-      sn: 2,
-      studentName: 'BLESSING CHIDERA',
-      class: 'JSS 1',
-      english: { first: 68.00, second: 24.00, third: 21.00, total: 113.00, average: 75.33, position: 2 },
-      mathematics: { first: 66.00, second: 23.00, third: 27.00, total: 116.00, average: 77.33, position: 2 },
-      basicScience: { first: 70.00, second: 25.00, third: 21.00, total: 116.00, average: 77.33, position: 2 },
-      prevocational: { first: 65.00, second: 21.00, third: 22.00, total: 108.00, average: 72.00, position: 2 },
-      nationalValues: { first: 68.00, second: 23.00, third: 21.00, total: 112.00, average: 74.67, position: 2 },
-      totalScore: 1380.00,
-      overallAverage: 75.33,
-      percentAverage: 355,
-      overallPosition: 2,
-      grade: 'A',
-      remarks: 'Excellent'
-    },
-    {
-      sn: 3,
-      studentName: 'CHARLES NNAMDI',
-      class: 'JSS 1',
-      english: { first: 64.00, second: 22.00, third: 19.00, total: 105.00, average: 70.00, position: 3 },
-      mathematics: { first: 62.00, second: 21.00, third: 26.00, total: 109.00, average: 72.67, position: 3 },
-      basicScience: { first: 66.00, second: 23.00, third: 20.00, total: 109.00, average: 72.67, position: 3 },
-      prevocational: { first: 63.00, second: 20.00, third: 21.00, total: 104.00, average: 69.33, position: 3 },
-      nationalValues: { first: 65.00, second: 22.00, third: 20.00, total: 107.00, average: 71.33, position: 3 },
-      totalScore: 1280.00,
-      overallAverage: 71.20,
-      percentAverage: 330,
-      overallPosition: 3,
-      grade: 'B',
-      remarks: 'Very Good'
-    },
-    {
-      sn: 4,
-      studentName: 'DEBORAH FUNMILAYO',
-      class: 'JSS 1',
-      english: { first: 60.00, second: 20.00, third: 18.00, total: 98.00, average: 65.33, position: 4 },
-      mathematics: { first: 58.00, second: 19.00, third: 24.00, total: 101.00, average: 67.33, position: 4 },
-      basicScience: { first: 62.00, second: 21.00, third: 19.00, total: 102.00, average: 68.00, position: 4 },
-      prevocational: { first: 60.00, second: 19.00, third: 20.00, total: 99.00, average: 66.00, position: 4 },
-      nationalValues: { first: 61.00, second: 20.00, third: 19.00, total: 100.00, average: 66.67, position: 4 },
-      totalScore: 1180.00,
-      overallAverage: 66.67,
-      percentAverage: 310,
-      overallPosition: 4,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    {
-      sn: 5,
-      studentName: 'EBUKA CHINONSO',
-      class: 'JSS 1',
-      english: { first: 58.00, second: 19.00, third: 17.00, total: 94.00, average: 62.67, position: 5 },
-      mathematics: { first: 56.00, second: 18.00, third: 23.00, total: 97.00, average: 64.67, position: 5 },
-      basicScience: { first: 60.00, second: 20.00, third: 18.00, total: 98.00, average: 65.33, position: 5 },
-      prevocational: { first: 58.00, second: 18.00, third: 19.00, total: 95.00, average: 63.33, position: 5 },
-      nationalValues: { first: 59.00, second: 19.00, third: 18.00, total: 96.00, average: 64.00, position: 5 },
-      totalScore: 1120.00,
-      overallAverage: 64.00,
-      percentAverage: 300,
-      overallPosition: 5,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    // JSS 2 students
-    {
-      sn: 1,
-      studentName: 'EZEKIEL CHUKWUEMEKA',
-      class: 'JSS 2',
-      english: { first: 75.00, second: 27.00, third: 24.00, total: 126.00, average: 84.00, position: 1 },
-      mathematics: { first: 73.00, second: 26.00, third: 30.00, total: 129.00, average: 86.00, position: 1 },
-      basicScience: { first: 76.00, second: 28.00, third: 23.00, total: 127.00, average: 84.67, position: 1 },
-      prevocational: { first: 70.00, second: 24.00, third: 24.00, total: 118.00, average: 78.67, position: 1 },
-      nationalValues: { first: 74.00, second: 25.00, third: 23.00, total: 122.00, average: 81.33, position: 1 },
-      totalScore: 1580.00,
-      overallAverage: 82.93,
-      percentAverage: 395,
-      overallPosition: 1,
-      grade: 'A',
-      remarks: 'Outstanding Achievement'
-    },
-    {
-      sn: 2,
-      studentName: 'FOLAKE ADENIKE',
-      class: 'JSS 2',
-      english: { first: 70.00, second: 25.00, third: 22.00, total: 117.00, average: 78.00, position: 2 },
-      mathematics: { first: 68.00, second: 24.00, third: 28.00, total: 120.00, average: 80.00, position: 2 },
-      basicScience: { first: 72.00, second: 26.00, third: 22.00, total: 120.00, average: 80.00, position: 2 },
-      prevocational: { first: 67.00, second: 22.00, third: 23.00, total: 112.00, average: 74.67, position: 2 },
-      nationalValues: { first: 70.00, second: 24.00, third: 22.00, total: 116.00, average: 77.33, position: 2 },
-      totalScore: 1460.00,
-      overallAverage: 78.00,
-      percentAverage: 370,
-      overallPosition: 2,
-      grade: 'A',
-      remarks: 'Excellent Performance'
-    },
-    {
-      sn: 3,
-      studentName: 'GOODNESS OLAMIDE',
-      class: 'JSS 2',
-      english: { first: 66.00, second: 23.00, third: 20.00, total: 109.00, average: 72.67, position: 3 },
-      mathematics: { first: 64.00, second: 22.00, third: 27.00, total: 113.00, average: 75.33, position: 3 },
-      basicScience: { first: 68.00, second: 24.00, third: 21.00, total: 113.00, average: 75.33, position: 3 },
-      prevocational: { first: 64.00, second: 21.00, third: 22.00, total: 107.00, average: 71.33, position: 3 },
-      nationalValues: { first: 66.00, second: 23.00, third: 21.00, total: 110.00, average: 73.33, position: 3 },
-      totalScore: 1340.00,
-      overallAverage: 73.60,
-      percentAverage: 345,
-      overallPosition: 3,
-      grade: 'B',
-      remarks: 'Very Good'
-    },
-    {
-      sn: 4,
-      studentName: 'HABIB ABDULLAHI',
-      class: 'JSS 2',
-      english: { first: 62.00, second: 21.00, third: 19.00, total: 102.00, average: 68.00, position: 4 },
-      mathematics: { first: 60.00, second: 20.00, third: 25.00, total: 105.00, average: 70.00, position: 4 },
-      basicScience: { first: 64.00, second: 22.00, third: 20.00, total: 106.00, average: 70.67, position: 4 },
-      prevocational: { first: 61.00, second: 20.00, third: 21.00, total: 102.00, average: 68.00, position: 4 },
-      nationalValues: { first: 63.00, second: 21.00, third: 20.00, total: 104.00, average: 69.33, position: 4 },
-      totalScore: 1260.00,
-      overallAverage: 69.20,
-      percentAverage: 325,
-      overallPosition: 4,
-      grade: 'B',
-      remarks: 'Good'
-    },
-    // SSS 1 students
-    {
-      sn: 1,
-      studentName: 'ADEBAYO TEMITOPE',
-      class: 'SSS 1',
-      english: { first: 78.00, second: 28.00, third: 25.00, total: 131.00, average: 87.33, position: 1 },
-      mathematics: { first: 76.00, second: 27.00, third: 31.00, total: 134.00, average: 89.33, position: 1 },
-      basicScience: { first: 79.00, second: 29.00, third: 24.00, total: 132.00, average: 88.00, position: 1 },
-      prevocational: { first: 73.00, second: 25.00, third: 25.00, total: 123.00, average: 82.00, position: 1 },
-      nationalValues: { first: 77.00, second: 26.00, third: 24.00, total: 127.00, average: 84.67, position: 1 },
-      totalScore: 1650.00,
-      overallAverage: 86.27,
-      percentAverage: 410,
-      overallPosition: 1,
-      grade: 'A',
-      remarks: 'Exceptional Student'
-    },
-    {
-      sn: 2,
-      studentName: 'BUKOLA OLUWAKEMI',
-      class: 'SSS 1',
-      english: { first: 74.00, second: 26.00, third: 23.00, total: 123.00, average: 82.00, position: 2 },
-      mathematics: { first: 72.00, second: 25.00, third: 29.00, total: 126.00, average: 84.00, position: 2 },
-      basicScience: { first: 75.00, second: 27.00, third: 23.00, total: 125.00, average: 83.33, position: 2 },
-      prevocational: { first: 70.00, second: 24.00, third: 24.00, total: 118.00, average: 78.67, position: 2 },
-      nationalValues: { first: 73.00, second: 25.00, third: 23.00, total: 121.00, average: 80.67, position: 2 },
-      totalScore: 1540.00,
-      overallAverage: 81.73,
-      percentAverage: 385,
-      overallPosition: 2,
-      grade: 'A',
-      remarks: 'Excellent Work'
-    },
-    {
-      sn: 3,
-      studentName: 'CHINEDU IKECHUKWU',
-      class: 'SSS 1',
-      english: { first: 70.00, second: 24.00, third: 21.00, total: 115.00, average: 76.67, position: 3 },
-      mathematics: { first: 68.00, second: 23.00, third: 28.00, total: 119.00, average: 79.33, position: 3 },
-      basicScience: { first: 71.00, second: 25.00, third: 22.00, total: 118.00, average: 78.67, position: 3 },
-      prevocational: { first: 67.00, second: 22.00, third: 23.00, total: 112.00, average: 74.67, position: 3 },
-      nationalValues: { first: 69.00, second: 24.00, third: 22.00, total: 115.00, average: 76.67, position: 3 },
-      totalScore: 1420.00,
-      overallAverage: 77.20,
-      percentAverage: 360,
-      overallPosition: 3,
-      grade: 'B',
-      remarks: 'Very Good'
-    },
-    {
-      sn: 4,
-      studentName: 'DEBORAH OLUWASEYI',
-      class: 'SSS 1',
-      english: { first: 66.00, second: 22.00, third: 20.00, total: 108.00, average: 72.00, position: 4 },
-      mathematics: { first: 64.00, second: 21.00, third: 26.00, total: 111.00, average: 74.00, position: 4 },
-      basicScience: { first: 67.00, second: 23.00, third: 21.00, total: 111.00, average: 74.00, position: 4 },
-      prevocational: { first: 64.00, second: 21.00, third: 22.00, total: 107.00, average: 71.33, position: 4 },
-      nationalValues: { first: 65.00, second: 22.00, third: 21.00, total: 108.00, average: 72.00, position: 4 },
-      totalScore: 1320.00,
-      overallAverage: 72.67,
-      percentAverage: 335,
-      overallPosition: 4,
-      grade: 'B',
-      remarks: 'Good Performance'
-    },
-    {
-      sn: 5,
-      studentName: 'EMMANUEL AYOMIDE',
-      class: 'SSS 1',
-      english: { first: 62.00, second: 20.00, third: 19.00, total: 101.00, average: 67.33, position: 5 },
-      mathematics: { first: 60.00, second: 20.00, third: 25.00, total: 105.00, average: 70.00, position: 5 },
-      basicScience: { first: 63.00, second: 21.00, third: 20.00, total: 104.00, average: 69.33, position: 5 },
-      prevocational: { first: 61.00, second: 20.00, third: 21.00, total: 102.00, average: 68.00, position: 5 },
-      nationalValues: { first: 62.00, second: 21.00, third: 20.00, total: 103.00, average: 68.67, position: 5 },
-      totalScore: 1230.00,
-      overallAverage: 68.67,
-      percentAverage: 315,
-      overallPosition: 5,
-      grade: 'B',
-      remarks: 'Good'
-    }
-  ];
+  const allBroadsheetData: BroadsheetData[] = [];
 
   // Filter students based on selected class
   const broadsheetData = useMemo(() => {
     const filtered = allBroadsheetData
       .filter(student => student.class === selectedClass)
       .map((student, index) => ({ ...student, sn: index + 1 }));
-    
+
     // Merge passport photos from student management
     return mergeStudentPhotos(filtered);
   }, [selectedClass]);
@@ -745,7 +263,7 @@ export const ExaminationManagement: React.FC = () => {
           result.id === resultId ? { ...result, status: 'approved' as const } : result
         )
       );
-      
+
       toast.success('Results approved and released', {
         description: `${targetResult.class} ${resultType.toUpperCase()} results are now visible to students and parents.`,
       });
@@ -845,7 +363,7 @@ export const ExaminationManagement: React.FC = () => {
       toast.error('Please provide a rejection reason');
       return;
     }
-    
+
     const success = dataFlowService.rejectCBTAssessment(selectedCBT.id, cbtRejectionReason);
     if (success) {
       toast.success('CBT Assessment rejected');
@@ -1359,7 +877,7 @@ export const ExaminationManagement: React.FC = () => {
     `);
 
     printWindow.document.close();
-    
+
     // Wait for content to load then print
     printWindow.onload = () => {
       printWindow.focus();
@@ -1478,7 +996,7 @@ export const ExaminationManagement: React.FC = () => {
               <div>
                 <h3 className="font-semibold text-blue-900">Auto-Generated Broadsheet</h3>
                 <p className="text-sm text-blue-700 mt-1">
-                  This broadsheet is automatically populated with student term total scores per subject. 
+                  This broadsheet is automatically populated with student term total scores per subject.
                   Data is collected immediately when student term results are locked by the principal in the Result Approval section.
                 </p>
               </div>
@@ -1498,7 +1016,7 @@ export const ExaminationManagement: React.FC = () => {
                     <p className="text-sm italic mt-1">MOTTO: .... refined learning for exceptional minds</p>
                   </div>
                 </div>
-                
+
                 {/* Selection Controls */}
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                   <div className="flex flex-col gap-1">
@@ -1543,7 +1061,7 @@ export const ExaminationManagement: React.FC = () => {
                     </Select>
                   </div>
                 </div>
-                
+
                 <h3 className="text-center font-bold text-lg mt-4 text-red-700">BROAD SHEET</h3>
               </div>
 
@@ -1553,8 +1071,8 @@ export const ExaminationManagement: React.FC = () => {
                   <thead>
                     {/* Subject Headers */}
                     <tr className="bg-gray-100">
-                      <th rowSpan={2} className="border border-gray-400 p-2 text-center" style={{minWidth: '30px'}}>S/N</th>
-                      <th rowSpan={2} className="border border-gray-400 p-2 text-left" style={{minWidth: '150px'}}>STUDENT'S NAME</th>
+                      <th rowSpan={2} className="border border-gray-400 p-2 text-center" style={{ minWidth: '30px' }}>S/N</th>
+                      <th rowSpan={2} className="border border-gray-400 p-2 text-left" style={{ minWidth: '150px' }}>STUDENT'S NAME</th>
                       <th colSpan={6} className="border border-gray-400 p-1 text-center bg-gray-200">ENGLISH</th>
                       <th colSpan={6} className="border border-gray-400 p-1 text-center bg-blue-900 text-white">MATHEMATICS</th>
                       <th colSpan={6} className="border border-gray-400 p-1 text-center bg-red-700 text-white">BASIC SCIENCE & TECHNOLOGY</th>
@@ -1563,40 +1081,40 @@ export const ExaminationManagement: React.FC = () => {
                     </tr>
                     {/* Sub-columns */}
                     <tr className="bg-gray-50">
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>1ST</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>2ND</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>3RD</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>TOTAL</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '55px'}}>AVERAGE</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>POSITION</th>
-                      
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>1ST</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>2ND</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>3RD</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>TOTAL</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '55px'}}>AVERAGE</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>POSITION</th>
-                      
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>1ST</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>2ND</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>3RD</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>TOTAL</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '55px'}}>AVERAGE</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>POSITION</th>
-                      
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>1ST</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>2ND</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>3RD</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>TOTAL</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '55px'}}>AVERAGE</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>POSITION</th>
-                      
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>1ST</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>2ND</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '35px'}}>3RD</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>TOTAL</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '55px'}}>AVERAGE</th>
-                      <th className="border border-gray-400 p-1 text-center" style={{minWidth: '45px'}}>POSITION</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>1ST</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>2ND</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>3RD</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>TOTAL</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '55px' }}>AVERAGE</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>POSITION</th>
+
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>1ST</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>2ND</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>3RD</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>TOTAL</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '55px' }}>AVERAGE</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>POSITION</th>
+
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>1ST</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>2ND</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>3RD</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>TOTAL</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '55px' }}>AVERAGE</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>POSITION</th>
+
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>1ST</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>2ND</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>3RD</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>TOTAL</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '55px' }}>AVERAGE</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>POSITION</th>
+
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>1ST</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>2ND</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '35px' }}>3RD</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>TOTAL</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '55px' }}>AVERAGE</th>
+                      <th className="border border-gray-400 p-1 text-center" style={{ minWidth: '45px' }}>POSITION</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1606,7 +1124,7 @@ export const ExaminationManagement: React.FC = () => {
                         <tr key={student.sn} className="hover:bg-gray-50">
                           <td className="border border-gray-300 p-1 text-center">{student.sn}</td>
                           <td className="border border-gray-300 p-1 font-medium">{student.studentName}</td>
-                          
+
                           {/* English */}
                           <td className="border border-gray-300 p-1 text-center">{student.english.first.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.english.second.toFixed(2)}</td>
@@ -1614,7 +1132,7 @@ export const ExaminationManagement: React.FC = () => {
                           <td className="border border-gray-300 p-1 text-center">{student.english.total.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.english.average > 0 ? student.english.average.toFixed(2) : '-'}</td>
                           <td className="border border-gray-300 p-1 text-center bg-red-100 font-medium">{student.english.position > 0 ? `${student.english.position}${['ST', 'ND', 'RD'][student.english.position - 1] || 'TH'}` : '-'}</td>
-                          
+
                           {/* Mathematics */}
                           <td className="border border-gray-300 p-1 text-center">{student.mathematics.first.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.mathematics.second.toFixed(2)}</td>
@@ -1622,7 +1140,7 @@ export const ExaminationManagement: React.FC = () => {
                           <td className="border border-gray-300 p-1 text-center">{student.mathematics.total.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.mathematics.average.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center bg-blue-100 font-medium">{`${student.mathematics.position}${['ST', 'ND', 'RD'][student.mathematics.position - 1] || 'TH'}`}</td>
-                          
+
                           {/* Basic Science */}
                           <td className="border border-gray-300 p-1 text-center">{student.basicScience.first.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.basicScience.second.toFixed(2)}</td>
@@ -1630,7 +1148,7 @@ export const ExaminationManagement: React.FC = () => {
                           <td className="border border-gray-300 p-1 text-center">{student.basicScience.total.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.basicScience.average.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center bg-red-100 font-medium">{`${student.basicScience.position}${['ST', 'ND', 'RD'][student.basicScience.position - 1] || 'TH'}`}</td>
-                          
+
                           {/* Pre-vocational */}
                           <td className="border border-gray-300 p-1 text-center">{student.prevocational.first.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.prevocational.second.toFixed(2)}</td>
@@ -1638,7 +1156,7 @@ export const ExaminationManagement: React.FC = () => {
                           <td className="border border-gray-300 p-1 text-center">{student.prevocational.total.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.prevocational.average.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center bg-gray-200 font-medium">{`${student.prevocational.position}${['ST', 'ND', 'RD'][student.prevocational.position - 1] || 'TH'}`}</td>
-                          
+
                           {/* National Values */}
                           <td className="border border-gray-300 p-1 text-center">{student.nationalValues.first.toFixed(2)}</td>
                           <td className="border border-gray-300 p-1 text-center">{student.nationalValues.second.toFixed(2)}</td>
@@ -1655,7 +1173,7 @@ export const ExaminationManagement: React.FC = () => {
                         </td>
                       </tr>
                     )}
-                    
+
                     {/* Class Average Row */}
                     {broadsheetData.length > 0 && (
                       <tr className="bg-blue-50 font-medium">
@@ -1666,28 +1184,28 @@ export const ExaminationManagement: React.FC = () => {
                         <td className="border border-gray-400 p-1 text-center">{classAverages.english.total.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center bg-blue-200">{classAverages.english.average.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center"></td>
-                        
+
                         <td className="border border-gray-400 p-1 text-center">{classAverages.mathematics.first.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.mathematics.second.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.mathematics.third.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.mathematics.total.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center bg-blue-200">{classAverages.mathematics.average.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center"></td>
-                        
+
                         <td className="border border-gray-400 p-1 text-center">{classAverages.basicScience.first.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.basicScience.second.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.basicScience.third.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.basicScience.total.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center bg-blue-200">{classAverages.basicScience.average.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center"></td>
-                        
+
                         <td className="border border-gray-400 p-1 text-center">{classAverages.prevocational.first.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.prevocational.second.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.prevocational.third.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.prevocational.total.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center bg-blue-200">{classAverages.prevocational.average.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center"></td>
-                        
+
                         <td className="border border-gray-400 p-1 text-center">{classAverages.nationalValues.first.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.nationalValues.second.toFixed(2)}</td>
                         <td className="border border-gray-400 p-1 text-center">{classAverages.nationalValues.third.toFixed(2)}</td>
@@ -1708,13 +1226,13 @@ export const ExaminationManagement: React.FC = () => {
                     <table className="w-full text-xs border-collapse">
                       <thead>
                         <tr className="bg-gray-100">
-                          <th className="border border-gray-400 p-2 text-left" style={{minWidth: '150px'}}>STUDENT'S NAME</th>
+                          <th className="border border-gray-400 p-2 text-left" style={{ minWidth: '150px' }}>STUDENT'S NAME</th>
                           <th className="border border-gray-400 p-2 text-center">TOTAL</th>
                           <th className="border border-gray-400 p-2 text-center">OVERALL AVERAGE</th>
                           <th className="border border-gray-400 p-2 text-center">% AVERAGE</th>
                           <th className="border border-gray-400 p-2 text-center">OVERALL POSITION</th>
                           <th className="border border-gray-400 p-2 text-center">GRADE</th>
-                          <th className="border border-gray-400 p-2 text-left" style={{minWidth: '200px'}}>REMARKS</th>
+                          <th className="border border-gray-400 p-2 text-left" style={{ minWidth: '200px' }}>REMARKS</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1736,12 +1254,12 @@ export const ExaminationManagement: React.FC = () => {
                   {/* Signature Section */}
                   <div className="mt-8 space-y-6">
                     <h4 className="font-semibold text-sm mb-4">Signatures & Dates</h4>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Class Teacher Signature */}
                       <div className="space-y-3 border border-gray-200 p-4 rounded-lg">
                         <label className="text-sm font-medium">CLASS TEACHER</label>
-                        
+
                         <div className="space-y-2">
                           <label className="text-xs text-gray-600">Upload Signature:</label>
                           <div className="flex items-center gap-2">
@@ -1814,7 +1332,7 @@ export const ExaminationManagement: React.FC = () => {
                       {/* Admin Signature */}
                       <div className="space-y-3 border border-gray-200 p-4 rounded-lg">
                         <label className="text-sm font-medium">ADMIN</label>
-                        
+
                         <div className="space-y-2">
                           <label className="text-xs text-gray-600">Upload Signature:</label>
                           <div className="flex items-center gap-2">
@@ -1859,7 +1377,7 @@ export const ExaminationManagement: React.FC = () => {
                       {/* Principal Signature */}
                       <div className="space-y-3 border border-gray-200 p-4 rounded-lg">
                         <label className="text-sm font-medium">PRINCIPAL</label>
-                        
+
                         <div className="space-y-2">
                           <label className="text-xs text-gray-600">Upload Signature:</label>
                           <div className="flex items-center gap-2">
@@ -1968,8 +1486,8 @@ export const ExaminationManagement: React.FC = () => {
                               result.status === 'draft'
                                 ? 'default'
                                 : result.status === 'locked'
-                                ? 'secondary'
-                                : 'outline'
+                                  ? 'secondary'
+                                  : 'outline'
                             }
                           >
                             {result.status}
@@ -2006,16 +1524,16 @@ export const ExaminationManagement: React.FC = () => {
                         )}
                         {result.status === 'locked' && (
                           <>
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
+                            <Button
+                              size="sm"
+                              variant="destructive"
                               onClick={() => handleRejectResults(result.id)}
                             >
                               <X className="w-4 h-4 mr-2" />
                               Reject (Unlock)
                             </Button>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               onClick={() => handleApproveResults(result.id)}
                               className="bg-green-600 hover:bg-green-700"
                             >
@@ -2177,89 +1695,89 @@ export const ExaminationManagement: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="questions" className="space-y-4">
-           <Card>
-             <CardHeader>
-               <CardTitle>Exam & CA Question Review</CardTitle>
-               <CardDescription>Review and approve questions submitted by teachers</CardDescription>
-             </CardHeader>
-             <CardContent>
-               <div className="flex gap-4 mb-4">
-                 <Select defaultValue="JSS 1">
-                   <SelectTrigger className="w-[180px]">
-                     <SelectValue placeholder="Select Class" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="JSS 1">JSS 1</SelectItem>
-                     <SelectItem value="JSS 2">JSS 2</SelectItem>
-                     <SelectItem value="SSS 1">SSS 1</SelectItem>
-                   </SelectContent>
-                 </Select>
-                 <Select defaultValue="Mathematics">
-                   <SelectTrigger className="w-[180px]">
-                     <SelectValue placeholder="Select Subject" />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="Mathematics">Mathematics</SelectItem>
-                     <SelectItem value="English">English</SelectItem>
-                     <SelectItem value="Basic Science">Basic Science</SelectItem>
-                   </SelectContent>
-                 </Select>
-               </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Exam & CA Question Review</CardTitle>
+              <CardDescription>Review and approve questions submitted by teachers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4 mb-4">
+                <Select defaultValue="JSS 1">
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select Class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="JSS 1">JSS 1</SelectItem>
+                    <SelectItem value="JSS 2">JSS 2</SelectItem>
+                    <SelectItem value="SSS 1">SSS 1</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select defaultValue="Mathematics">
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select Subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mathematics">Mathematics</SelectItem>
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Basic Science">Basic Science</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-               <div className="border rounded-md">
-                 <table className="w-full text-sm">
-                   <thead className="bg-gray-50 border-b">
-                     <tr>
-                       <th className="p-3 text-left font-medium">Question</th>
-                       <th className="p-3 text-center font-medium">Type</th>
-                       <th className="p-3 text-center font-medium">Options</th>
-                       <th className="p-3 text-center font-medium">Correct Ans</th>
-                       <th className="p-3 text-center font-medium">Status</th>
-                       <th className="p-3 text-right font-medium">Action</th>
-                     </tr>
-                   </thead>
-                   <tbody>
-                     <tr className="border-b">
-                       <td className="p-3">What is the square root of 144?</td>
-                       <td className="p-3 text-center">MCQ</td>
-                       <td className="p-3 text-center">4</td>
-                       <td className="p-3 text-center font-bold text-green-600">C</td>
-                       <td className="p-3 text-center"><Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Approved</Badge></td>
-                       <td className="p-3 text-right">
-                         <Button variant="ghost" size="sm">Edit</Button>
-                       </td>
-                     </tr>
-                     <tr className="border-b">
-                       <td className="p-3">Solve for x: 2x + 5 = 15</td>
-                       <td className="p-3 text-center">MCQ</td>
-                       <td className="p-3 text-center">4</td>
-                       <td className="p-3 text-center font-bold text-green-600">A</td>
-                       <td className="p-3 text-center"><Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pending</Badge></td>
-                       <td className="p-3 text-right">
-                         <div className="flex justify-end gap-2">
-                           <Button variant="outline" size="sm" className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50">Approve</Button>
-                           <Button variant="outline" size="sm" className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50">Reject</Button>
-                         </div>
-                       </td>
-                     </tr>
-                     <tr>
-                       <td className="p-3">Define 'Photosynthesis'.</td>
-                       <td className="p-3 text-center">Theory</td>
-                       <td className="p-3 text-center">-</td>
-                       <td className="p-3 text-center">-</td>
-                       <td className="p-3 text-center"><Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pending</Badge></td>
-                       <td className="p-3 text-right">
-                         <div className="flex justify-end gap-2">
-                           <Button variant="outline" size="sm" className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50">Approve</Button>
-                           <Button variant="outline" size="sm" className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50">Reject</Button>
-                         </div>
-                       </td>
-                     </tr>
-                   </tbody>
-                 </table>
-               </div>
-             </CardContent>
-           </Card>
+              <div className="border rounded-md">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="p-3 text-left font-medium">Question</th>
+                      <th className="p-3 text-center font-medium">Type</th>
+                      <th className="p-3 text-center font-medium">Options</th>
+                      <th className="p-3 text-center font-medium">Correct Ans</th>
+                      <th className="p-3 text-center font-medium">Status</th>
+                      <th className="p-3 text-right font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="p-3">What is the square root of 144?</td>
+                      <td className="p-3 text-center">MCQ</td>
+                      <td className="p-3 text-center">4</td>
+                      <td className="p-3 text-center font-bold text-green-600">C</td>
+                      <td className="p-3 text-center"><Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Approved</Badge></td>
+                      <td className="p-3 text-right">
+                        <Button variant="ghost" size="sm">Edit</Button>
+                      </td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="p-3">Solve for x: 2x + 5 = 15</td>
+                      <td className="p-3 text-center">MCQ</td>
+                      <td className="p-3 text-center">4</td>
+                      <td className="p-3 text-center font-bold text-green-600">A</td>
+                      <td className="p-3 text-center"><Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pending</Badge></td>
+                      <td className="p-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50">Approve</Button>
+                          <Button variant="outline" size="sm" className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50">Reject</Button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="p-3">Define 'Photosynthesis'.</td>
+                      <td className="p-3 text-center">Theory</td>
+                      <td className="p-3 text-center">-</td>
+                      <td className="p-3 text-center">-</td>
+                      <td className="p-3 text-center"><Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pending</Badge></td>
+                      <td className="p-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" className="h-7 text-xs border-green-200 text-green-700 hover:bg-green-50">Approve</Button>
+                          <Button variant="outline" size="sm" className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50">Reject</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
@@ -2329,14 +1847,14 @@ export const ExaminationManagement: React.FC = () => {
               {selectedResultSet?.class} • {selectedResultSet?.term} • {selectedResultSet?.session}
             </DialogDescription>
           </DialogHeader>
-          <div 
-            className="h-[calc(95vh-180px)] overflow-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100" 
+          <div
+            className="h-[calc(95vh-180px)] overflow-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100"
             id="report-card-content"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-              {selectedStudent && resultType === 'term' && selectedResultSet ? (
-                /* Full Report Card Template */
-                <StudentReportCard
+            {selectedStudent && resultType === 'term' && selectedResultSet ? (
+              /* Full Report Card Template */
+              <StudentReportCard
                 student={selectedStudent}
                 term={selectedResultSet.term}
                 session={selectedResultSet.session}
@@ -2379,11 +1897,11 @@ export const ExaminationManagement: React.FC = () => {
                   average: s.total,
                   rank: '-',
                 }))}
-                />
-              ) : selectedStudent && resultType === 'ca' ? (
-                /* CA Results View - Full Report Card */
-                <div id="ca-report-card-content">
-                  <StudentReportCard
+              />
+            ) : selectedStudent && resultType === 'ca' ? (
+              /* CA Results View - Full Report Card */
+              <div id="ca-report-card-content">
+                <StudentReportCard
                   student={selectedStudent}
                   term={selectedTerm}
                   session={selectedSession}
@@ -2410,22 +1928,22 @@ export const ExaminationManagement: React.FC = () => {
                     setAdminSignature(null);
                     toast.success('Admin signature removed');
                   }}
-                    resultType="ca"
-                    userRole="Principal"
-                    subjects={teacherData.find((s: any) => s.studentName === selectedStudent.studentName)?.subjects?.map((s: any) => ({
-                      subject: s.subject,
-                      periodicTest: s.periodicTest,
-                      midTermTest: s.midTermTest,
-                      qp: s.qp,
-                      cp: s.cp,
-                      caTotal: (s.periodicTest || 0) + (s.midTermTest || 0) + (s.qp || 0) + (s.cp || 0),
-                      percentScore: (((s.periodicTest || 0) + (s.midTermTest || 0) + (s.qp || 0) + (s.cp || 0)) / 30 * 100).toFixed(1),
-                      grade: s.grade,
-                      remark: s.grade === 'A' ? 'EXCELLENT' : s.grade === 'B' ? 'VERY GOOD' : 'GOOD',
-                    }))}
-                  />
-                </div>
-              ) : null}
+                  resultType="ca"
+                  userRole="Principal"
+                  subjects={teacherData.find((s: any) => s.studentName === selectedStudent.studentName)?.subjects?.map((s: any) => ({
+                    subject: s.subject,
+                    periodicTest: s.periodicTest,
+                    midTermTest: s.midTermTest,
+                    qp: s.qp,
+                    cp: s.cp,
+                    caTotal: (s.periodicTest || 0) + (s.midTermTest || 0) + (s.qp || 0) + (s.cp || 0),
+                    percentScore: (((s.periodicTest || 0) + (s.midTermTest || 0) + (s.qp || 0) + (s.cp || 0)) / 30 * 100).toFixed(1),
+                    grade: s.grade,
+                    remark: s.grade === 'A' ? 'EXCELLENT' : s.grade === 'B' ? 'VERY GOOD' : 'GOOD',
+                  }))}
+                />
+              </div>
+            ) : null}
           </div>
           <DialogFooter className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-t bg-gray-50">
             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center w-full gap-3 sm:gap-0">
@@ -2448,14 +1966,14 @@ export const ExaminationManagement: React.FC = () => {
                 )}
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setShowResultDetailDialog(false)}
                   className="flex-1 sm:flex-none text-xs sm:text-sm"
                 >
                   Close
                 </Button>
-                <Button 
+                <Button
                   onClick={handleDownloadPDF}
                   className="flex-1 sm:flex-none text-xs sm:text-sm"
                 >
@@ -2629,12 +2147,11 @@ export const ExaminationManagement: React.FC = () => {
                                 {question.options.map((option, optIndex) => (
                                   <div
                                     key={optIndex}
-                                    className={`p-2 rounded text-sm ${
-                                      String.fromCharCode(97 + optIndex) === question.correctAnswer ||
-                                      optIndex === Number(question.correctAnswer)
+                                    className={`p-2 rounded text-sm ${String.fromCharCode(97 + optIndex) === question.correctAnswer ||
+                                        optIndex === Number(question.correctAnswer)
                                         ? 'bg-green-50 border border-green-200 font-medium text-green-900'
                                         : 'bg-gray-50'
-                                    }`}
+                                      }`}
                                   >
                                     <span className="font-medium mr-2">
                                       {String.fromCharCode(65 + optIndex)}.
@@ -2642,8 +2159,8 @@ export const ExaminationManagement: React.FC = () => {
                                     {option}
                                     {(String.fromCharCode(97 + optIndex) === question.correctAnswer ||
                                       optIndex === Number(question.correctAnswer)) && (
-                                      <span className="ml-2 text-green-600">(Correct Answer)</span>
-                                    )}
+                                        <span className="ml-2 text-green-600">(Correct Answer)</span>
+                                      )}
                                   </div>
                                 ))}
                               </div>

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
+import { TeacherAPI } from '../utils/api';
 import { MainLayout } from './components/layout/MainLayout';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignupPage, SignupFormData } from './components/auth/SignupPage';
 import { ForgotPasswordPage } from './components/auth/ForgotPasswordPage';
 import { PendingApprovalPage } from './components/auth/PendingApprovalPage';
-import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { ClassroomOverview } from './components/teacher/ClassroomOverview';
 import { ClassManagement } from './components/teacher/ClassManagement';
 import { DigitalGradebook } from './components/teacher/DigitalGradebook';
@@ -57,7 +57,13 @@ import { PrincipalSystemControl } from './components/principal/PrincipalSystemCo
 import { StudentManagement } from './components/principal/StudentManagement';
 import { BursarDashboard } from './components/dashboards/BursarDashboard';
 import { Toaster } from './components/ui/sonner';
+import { toast } from 'sonner';
+import { LessonNoteEditor } from './components/teacher/LessonNoteEditor';
+import { LessonNoteList } from './components/teacher/LessonNoteList';
+import { AttendanceRegister } from './components/teacher/AttendanceRegister';
+import { StudentPerformanceAnalytics } from './components/teacher/StudentPerformanceAnalytics';
 import { ParentProvider } from '../contexts/ParentContext';
+import { LessonNote } from '../types';
 import { ProfileSettings } from './components/shared/ProfileSettings';
 import { AdminClassManagement } from './components/shared/AdminClassManagement';
 import { SubjectManagement } from './components/shared/SubjectManagement';
@@ -74,6 +80,8 @@ function AppContent() {
   const { user, login, signup, resetPassword, logout, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState('/dashboard');
   const [authPage, setAuthPage] = useState<'login' | 'signup' | 'forgot-password'>('login');
+  const [lessonNoteMode, setLessonNoteMode] = useState<'list' | 'edit'>('list');
+  const [editingLessonNote, setEditingLessonNote] = useState<LessonNote | null>(null);
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -101,7 +109,7 @@ function AppContent() {
         />
       );
     }
-    
+
     if (authPage === 'forgot-password') {
       return (
         <ForgotPasswordPage
@@ -110,7 +118,7 @@ function AppContent() {
         />
       );
     }
-    
+
     return (
       <LoginPage
         onLogin={login}
@@ -240,7 +248,35 @@ function AppContent() {
         case '/classroom-overview':
           return <ClassroomOverview onNavigate={setCurrentPage} />;
         case '/lesson-notes':
-          return <TeacherDashboard />;
+          if (lessonNoteMode === 'list') {
+            return (
+              <LessonNoteList
+                onCreateNew={() => {
+                  setEditingLessonNote(null);
+                  setLessonNoteMode('edit');
+                }}
+                onEdit={(note) => {
+                  setEditingLessonNote(note);
+                  setLessonNoteMode('edit');
+                }}
+              />
+            );
+          }
+          return (
+            <LessonNoteEditor
+              lessonNote={editingLessonNote || undefined}
+              onSave={(note) => {
+                TeacherAPI.createLessonNote({ ...note, status: 'draft' });
+                toast.success('Lesson note saved as draft');
+                setLessonNoteMode('list');
+              }}
+              onSubmitForApproval={(note) => {
+                TeacherAPI.createLessonNote({ ...note, status: 'pending' });
+                toast.success('Lesson note submitted for approval');
+                setLessonNoteMode('list');
+              }}
+            />
+          );
         case '/class-management':
           return <ClassManagement />;
         case '/gradebook':
@@ -251,6 +287,10 @@ function AppContent() {
           return <UnifiedCommunicationHub userRole="teacher" />;
         case '/daily-briefing':
           return <DailyBriefing onNavigate={setCurrentPage} />;
+        case '/attendance':
+          return <AttendanceRegister />;
+        case '/performance-analytics':
+          return <StudentPerformanceAnalytics />;
         default:
           return <ClassroomOverview onNavigate={setCurrentPage} />;
       }

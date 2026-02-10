@@ -42,13 +42,13 @@ export const AssignmentSubmission: React.FC<AssignmentSubmissionProps> = ({ onNa
 
   // Mock assignment data (would come from props or route params in real app)
   const assignment: Assignment = {
-    id: '1',
-    title: 'Essay: "The Impact of Technology on Education"',
-    subject: 'English Language',
-    dueDate: 'Tomorrow, 5:00 PM',
-    instructions: 'Write a comprehensive essay discussing how technology has transformed modern education. Your essay should be 500-700 words and include examples from your own learning experience. Address both positive impacts and potential challenges.',
-    maxScore: 100,
-    attachments: ['Essay Guidelines.pdf', 'Grading Rubric.pdf'],
+    id: '',
+    title: 'Loading Assignment...',
+    subject: '',
+    dueDate: '',
+    instructions: '',
+    maxScore: 0,
+    attachments: [],
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

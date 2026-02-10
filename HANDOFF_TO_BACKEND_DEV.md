@@ -8,7 +8,7 @@
 
 ## 📋 What You're Getting
 
-A **fully functional frontend application** built with React + TypeScript + Tailwind that currently runs on **localStorage** (mock data). Your job is to build the Supabase backend and integrate it.
+A **fully functional frontend application** built with React + TypeScript + Tailwind that currently runs on **localStorage** (mock data). Your job is to build the custom PHP/MySQL backend and integrate it.
 
 ---
 
@@ -26,7 +26,7 @@ npm run dev
 - Explore the features: Lesson Notes, CBT Exams, Results, Communication, etc.
 
 ### 3. Read the Backend Guide
-Open `/BACKEND_DEVELOPER_GUIDE.md` - This is your complete implementation guide (900+ lines)
+Open `/BACKEND_DEVELOPER_GUIDE.md` - This is your complete implementation guide.
 
 ---
 
@@ -47,21 +47,17 @@ Open `/BACKEND_DEVELOPER_GUIDE.md` - This is your complete implementation guide 
 | `/src/contexts/AuthContext.tsx` | Current auth implementation |
 
 ### **Ignore These System Files:**
-- `/supabase/` folder (old system files)
-- `/utils/supabase/` folder (old system files)
 - `/guidelines/` folder
 - `/ATTRIBUTIONS.md`
-
-You'll create your own fresh Supabase setup.
 
 ---
 
 ## 🎯 Your Mission
 
-### **Goal:** Replace localStorage with Supabase backend
+### **Goal:** Replace localStorage with PHP/MySQL backend
 
 **Current:** Frontend → localStorage → Frontend  
-**Target:** Frontend → Supabase API → PostgreSQL Database
+**Target:** Frontend → PHP API (cPanel) → MySQL Database
 
 ### **Timeline:** 12-15 hours
 
@@ -69,12 +65,12 @@ You'll create your own fresh Supabase setup.
 
 ## 🔑 What You'll Build
 
-### **1. Database (PostgreSQL via Supabase)**
+### **1. Database (MySQL/MariaDB)**
 - 25+ tables (schema provided in guide)
-- Row Level Security (RLS) policies
+- Secure relationships and indexes
 - User roles: Student, Teacher, Parent, Principal, Proprietor, HR, Bursar
 
-### **2. Backend API (Supabase Edge Functions)**
+### **2. Backend API (PHP Scripts)**
 - 80+ API endpoints (all documented)
 - JWT authentication
 - Approval workflows (Teacher → Principal → Student)
@@ -82,8 +78,8 @@ You'll create your own fresh Supabase setup.
 
 ### **3. Integration Points**
 Replace these localStorage calls with API calls:
-- `localStorage.getItem('students')` → `GET /api/students`
-- `localStorage.setItem('lessonNotes')` → `POST /api/lesson-notes`
+- `localStorage.getItem('students')` → `GET /api/students.php`
+- `localStorage.setItem('lessonNotes')` → `POST /api/lesson_notes.php`
 - etc.
 
 ---
@@ -135,10 +131,10 @@ Teacher enters → Teacher submits → Principal approves → Principal publishe
 ## 🛠️ Implementation Steps
 
 ### **Phase 1: Setup (2 hours)**
-1. Create Supabase project
-2. Run database migrations (schema provided)
-3. Set up authentication
-4. Create Edge Functions server
+1. Setup MySQL database in cPanel
+2. Import SQL schema (schema provided)
+3. Create `api` folder structure
+4. Setup JWT library
 
 ### **Phase 2: Core APIs (6 hours)**
 1. User authentication endpoints
@@ -163,11 +159,10 @@ Teacher enters → Teacher submits → Principal approves → Principal publishe
 ## 🔧 Technology Requirements
 
 **You'll Use:**
-- Supabase (Backend as a Service)
-- PostgreSQL (Database)
-- Supabase Edge Functions (Hono.js framework)
-- Supabase Auth (JWT)
-- Supabase Storage (File uploads)
+- **PHP** (Server-side)
+- **MySQL** (Database)
+- **Apache/Nginx** (Web Server on cPanel)
+- **JWT** (Authentication)
 
 **Already Installed in Frontend:**
 - React 18 + TypeScript
@@ -271,8 +266,8 @@ After implementation, verify:
 - Example curl commands
 
 ❌ **What You Need to Build**
-- Supabase database
-- Backend API endpoints
+- MySQL database
+- PHP API endpoints
 - Authentication system
 - File storage
 - Frontend integration (replace localStorage)
@@ -287,7 +282,7 @@ Your backend is done when:
 3. ✅ CBT exams auto-grade correctly
 4. ✅ All localStorage is replaced with API calls
 5. ✅ File uploads work (student photos)
-6. ✅ Row Level Security prevents unauthorized access
+6. ✅ APIs are secure
 7. ✅ All test scenarios pass
 
 ---

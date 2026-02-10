@@ -52,43 +52,9 @@ export const CommunicationHub: React.FC = () => {
   const [messageSubject, setMessageSubject] = useState('');
   const [messageContent, setMessageContent] = useState('');
 
-  const [messages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'parent',
-      recipient: 'Mrs. Oluwaseun (Parent of Adebayo)',
-      subject: 'Outstanding Performance',
-      message: 'Your son has shown excellent improvement...',
-      status: 'read',
-      date: '2025-12-29',
-    },
-    {
-      id: '2',
-      type: 'class',
-      recipient: 'JSS 3A - All Students',
-      subject: 'Assignment Reminder',
-      message: 'Please submit your Quadratic Equations assignment...',
-      status: 'delivered',
-      date: '2025-12-30',
-    },
-    {
-      id: '3',
-      type: 'parent',
-      recipient: 'Mr. Akintola (Parent of Daniel)',
-      subject: 'Academic Concern',
-      message: 'I would like to discuss Daniel\'s recent performance...',
-      status: 'sent',
-      date: '2025-12-30',
-    },
-  ]);
+  const [messages] = useState<Message[]>([]);
 
-  const students = [
-    { id: '1', name: 'Adebayo Oluwaseun', class: 'JSS 3A', parentPhone: '+234 803 123 4567' },
-    { id: '2', name: 'Chioma Nwosu', class: 'JSS 3A', parentPhone: '+234 805 234 5678' },
-    { id: '3', name: 'Ibrahim Yusuf', class: 'JSS 3A', parentPhone: '+234 806 345 6789' },
-    { id: '4', name: 'Grace Okonkwo', class: 'JSS 3A', parentPhone: '+234 807 456 7890' },
-    { id: '5', name: 'Daniel Akintola', class: 'JSS 3A', parentPhone: '+234 808 567 8901' },
-  ];
+  const students: any[] = [];
 
   const handleSendMessage = () => {
     if (!messageSubject || !messageContent) {

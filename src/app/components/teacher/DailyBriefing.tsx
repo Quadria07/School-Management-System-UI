@@ -34,6 +34,8 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { toast } from 'sonner';
+import { TeacherAPI, SchoolAPI } from '../../../utils/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface PeriodSchedule {
   id: string;
@@ -85,187 +87,49 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
   const [showLessonNoteDialog, setShowLessonNoteDialog] = useState(false);
   const [showTaskDialog, setShowTaskDialog] = useState(false);
 
-  const [todaySchedule] = useState<PeriodSchedule[]>([
-    {
-      id: '1',
-      startTime: '8:00 AM',
-      endTime: '8:45 AM',
-      type: 'class',
-      subject: 'Mathematics',
-      class: 'JSS 3A',
-      room: 'Room 12',
-      lessonNoteStatus: 'approved',
-      topic: 'Quadratic Equations',
-      resourcesNeeded: ['Whiteboard Markers', 'Calculator'],
-    },
-    {
-      id: '2',
-      startTime: '8:45 AM',
-      endTime: '9:30 AM',
-      type: 'class',
-      subject: 'Mathematics',
-      class: 'JSS 2B',
-      room: 'Room 12',
-      lessonNoteStatus: 'approved',
-      topic: 'Introduction to Algebra',
-    },
-    {
-      id: '3',
-      startTime: '9:30 AM',
-      endTime: '10:00 AM',
-      type: 'break',
-    },
-    {
-      id: '4',
-      startTime: '10:00 AM',
-      endTime: '10:45 AM',
-      type: 'free',
-    },
-    {
-      id: '5',
-      startTime: '10:45 AM',
-      endTime: '11:30 AM',
-      type: 'class',
-      subject: 'Further Mathematics',
-      class: 'SSS 2A',
-      room: 'Science Lab',
-      lessonNoteStatus: 'missing',
-      topic: 'Trigonometric Functions',
-      resourcesNeeded: ['Projector', 'Graph Paper', 'Scientific Calculators'],
-    },
-    {
-      id: '6',
-      startTime: '11:30 AM',
-      endTime: '12:15 PM',
-      type: 'class',
-      subject: 'Mathematics',
-      class: 'JSS 1C',
-      room: 'Room 12',
-      lessonNoteStatus: 'pending',
-      topic: 'Basic Arithmetic Operations',
-    },
-    {
-      id: '7',
-      startTime: '12:15 PM',
-      endTime: '1:00 PM',
-      type: 'break',
-    },
-    {
-      id: '8',
-      startTime: '1:00 PM',
-      endTime: '1:45 PM',
-      type: 'class',
-      subject: 'Mathematics',
-      class: 'SSS 1B',
-      room: 'Room 12',
-      lessonNoteStatus: 'approved',
-      topic: 'Logarithms and Indices',
-    },
-    {
-      id: '9',
-      startTime: '1:45 PM',
-      endTime: '2:30 PM',
-      type: 'free',
-    },
-  ]);
+  const [loading, setLoading] = useState(true);
+  const [todaySchedule, setTodaySchedule] = useState<PeriodSchedule[]>([]);
+  const [duties, setDuties] = useState<Duty[]>([]);
+  const [studentHighlights, setStudentHighlights] = useState<StudentHighlight[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
+  const { user } = useAuth();
+  const [academicSettings, setAcademicSettings] = useState<{
+    term: string;
+    session: string;
+  }>({ term: '', session: '' });
 
-  const [duties] = useState<Duty[]>([
-    {
-      id: '1',
-      type: 'Assembly Duty',
-      time: '7:30 AM - 8:00 AM',
-      location: 'School Assembly Ground',
-      priority: 'high',
-    },
-    {
-      id: '2',
-      type: 'Break-time Supervision',
-      time: '9:30 AM - 10:00 AM',
-      location: 'Junior School Courtyard',
-      priority: 'medium',
-    },
-    {
-      id: '3',
-      type: 'Mathematics Departmental Meeting',
-      time: '2:30 PM - 3:15 PM',
-      location: 'Staff Room B',
-      priority: 'high',
-    },
-  ]);
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, settingsRes] = await Promise.all([
+          TeacherAPI.getStats(),
+          SchoolAPI.getAcademicSettings()
+        ]);
 
-  const [studentHighlights] = useState<StudentHighlight[]>([
-    {
-      id: '1',
-      type: 'birthday',
-      studentName: 'Adebayo Olamide',
-      class: 'JSS 3A',
-      message: 'Celebrating birthday today!',
-    },
-    {
-      id: '2',
-      type: 'birthday',
-      studentName: 'Chioma Nwachukwu',
-      class: 'JSS 2B',
-      message: 'Celebrating birthday today!',
-    },
-    {
-      id: '3',
-      type: 'absence',
-      studentName: 'Emmanuel Okeke',
-      class: 'JSS 3A',
-      message: 'Absent for 3 consecutive days. Follow-up recommended.',
-    },
-    {
-      id: '4',
-      type: 'medical',
-      studentName: 'Fatima Abdullahi',
-      class: 'SSS 2A',
-      message: 'Has medical appointment at 11:00 AM today.',
-      time: '11:00 AM',
-    },
-    {
-      id: '5',
-      type: 'special',
-      studentName: 'Ibrahim Mohammed',
-      class: 'JSS 1C',
-      message: 'Requires extra support with today\'s arithmetic lesson.',
-    },
-  ]);
+        if (statsRes.status === 'success' && statsRes.data) {
+          const statsData = statsRes.data as any;
+          if (statsData.todaySchedule) setTodaySchedule(statsData.todaySchedule);
+          if (statsData.duties) setDuties(statsData.duties);
+          if (statsData.studentHighlights) setStudentHighlights(statsData.studentHighlights);
+          if (statsData.pendingTasks) setPendingTasks(statsData.pendingTasks);
+        }
 
-  const [pendingTasks] = useState<PendingTask[]>([
-    {
-      id: '1',
-      type: 'grading',
-      title: '32 Scripts for JSS 2B Math Test',
-      description: 'Grade and enter scores into gradebook',
-      deadline: 'Tomorrow, 5:00 PM',
-      urgent: true,
-    },
-    {
-      id: '2',
-      type: 'feedback',
-      title: 'Principal\'s Feedback on Trigonometry Note',
-      description: 'Dr. Principal left comments on your lesson note: "Please add more practical examples"',
-      deadline: 'Revise by Friday',
-      urgent: false,
-    },
-    {
-      id: '3',
-      type: 'submission',
-      title: 'SSS 1B Assessment Submission',
-      description: 'Complete and submit Logarithms CBT Assessment',
-      deadline: 'Today, 11:59 PM',
-      urgent: true,
-    },
-    {
-      id: '4',
-      type: 'grading',
-      title: '18 Scripts for SSS 2A Quiz',
-      description: 'Grade trigonometry quiz and provide feedback',
-      deadline: 'Thursday, 5:00 PM',
-      urgent: false,
-    },
-  ]);
+        if (settingsRes.status === 'success' && settingsRes.data) {
+          const data = settingsRes.data as any;
+          setAcademicSettings({
+            term: data.currentTerm || '',
+            session: data.currentSession || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching briefing data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const getCurrentTime = () => {
     const now = new Date();
@@ -343,7 +207,7 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
             Daily Briefing
           </h1>
           <p className="text-sm sm:text-base text-gray-600">
-            Wednesday, December 31, 2025 • First Term, Week 12
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {academicSettings.term || user?.currentTerm || 'First Term'} • Session {academicSettings.session || user?.academicSession || '2024/2025'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -388,30 +252,27 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
                 {todaySchedule.map((period, index) => (
                   <div
                     key={period.id}
-                    className={`relative ${
-                      index !== todaySchedule.length - 1
-                        ? 'border-l-2 border-gray-200 pl-6 pb-6 ml-3'
-                        : 'pl-6 ml-3'
-                    }`}
+                    className={`relative ${index !== todaySchedule.length - 1
+                      ? 'border-l-2 border-gray-200 pl-6 pb-6 ml-3'
+                      : 'pl-6 ml-3'
+                      }`}
                   >
                     {/* Timeline Dot */}
                     <div
-                      className={`absolute left-[-9px] top-2 w-4 h-4 rounded-full border-2 ${
-                        isPeriodCurrent(period)
-                          ? 'bg-blue-600 border-blue-600 animate-pulse'
-                          : isPeriodUpcoming(period)
+                      className={`absolute left-[-9px] top-2 w-4 h-4 rounded-full border-2 ${isPeriodCurrent(period)
+                        ? 'bg-blue-600 border-blue-600 animate-pulse'
+                        : isPeriodUpcoming(period)
                           ? 'bg-white border-gray-400'
                           : 'bg-green-600 border-green-600'
-                      }`}
+                        }`}
                     />
 
                     {period.type === 'class' ? (
                       <div
-                        className={`p-4 rounded-lg border-2 ${
-                          isPeriodCurrent(period)
-                            ? 'bg-blue-50 border-blue-300'
-                            : 'bg-white border-gray-200'
-                        }`}
+                        className={`p-4 rounded-lg border-2 ${isPeriodCurrent(period)
+                          ? 'bg-blue-50 border-blue-300'
+                          : 'bg-white border-gray-200'
+                          }`}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           <div className="flex-1">
@@ -551,11 +412,10 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
                 {pendingTasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`p-4 rounded-lg border ${
-                      task.urgent
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-white border-gray-200'
-                    }`}
+                    className={`p-4 rounded-lg border ${task.urgent
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-white border-gray-200'
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
@@ -613,11 +473,10 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
                 {duties.map((duty) => (
                   <div
                     key={duty.id}
-                    className={`p-3 rounded-lg border ${
-                      duty.priority === 'high'
-                        ? 'bg-red-50 border-red-200'
-                        : 'bg-blue-50 border-blue-200'
-                    }`}
+                    className={`p-3 rounded-lg border ${duty.priority === 'high'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-blue-50 border-blue-200'
+                      }`}
                   >
                     <div className="flex items-start gap-2">
                       {duty.priority === 'high' ? (
@@ -831,8 +690,8 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
                 {selectedTask?.type === 'grading'
                   ? 'Grading Task'
                   : selectedTask?.type === 'feedback'
-                  ? 'Principal Feedback'
-                  : 'Assessment Submission'}
+                    ? 'Principal Feedback'
+                    : 'Assessment Submission'}
               </Badge>
             </div>
           </div>
@@ -871,8 +730,8 @@ export const DailyBriefing: React.FC<DailyBriefingProps> = ({ onNavigate }) => {
               {selectedTask?.type === 'grading'
                 ? 'Open Gradebook'
                 : selectedTask?.type === 'feedback'
-                ? 'View Lesson Note'
-                : 'Open Assessment'}
+                  ? 'View Lesson Note'
+                  : 'Open Assessment'}
             </Button>
           </DialogFooter>
         </DialogContent>

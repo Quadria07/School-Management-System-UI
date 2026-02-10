@@ -28,86 +28,8 @@ export const AttendanceTracking: React.FC = () => {
   const parentContext = useParent();
   const selectedChild = parentContext?.selectedChild;
 
-  const [attendanceData] = useState<AttendanceDay[]>([
-    { date: 'Dec 31', status: 'present', clockIn: '7:45 AM', clockOut: '2:30 PM' },
-    { date: 'Dec 30', status: 'present', clockIn: '7:50 AM', clockOut: '2:35 PM' },
-    { date: 'Dec 27', status: 'late', clockIn: '8:15 AM', clockOut: '2:30 PM', remarks: 'Traffic delay' },
-    { date: 'Dec 26', status: 'present', clockIn: '7:40 AM', clockOut: '2:28 PM' },
-    { date: 'Dec 24', status: 'present', clockIn: '7:42 AM', clockOut: '2:31 PM' },
-    { date: 'Dec 23', status: 'present', clockIn: '7:48 AM', clockOut: '2:33 PM' },
-    { date: 'Dec 20', status: 'present', clockIn: '7:52 AM', clockOut: '2:35 PM' },
-    { date: 'Dec 19', status: 'absent', remarks: 'Medical appointment (excused)' },
-    { date: 'Dec 18', status: 'present', clockIn: '7:47 AM', clockOut: '2:30 PM' },
-    { date: 'Dec 17', status: 'present', clockIn: '7:43 AM', clockOut: '2:29 PM' },
-  ]);
-
-  const totalDays = attendanceData.length;
-  const presentDays = attendanceData.filter((d) => d.status === 'present').length;
-  const lateDays = attendanceData.filter((d) => d.status === 'late').length;
-  const absentDays = attendanceData.filter((d) => d.status === 'absent').length;
-  const attendanceRate = ((presentDays + lateDays) / totalDays) * 100;
-
-  // Timetable Data
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  
-  const timeSlots = [
-    { label: '8:00 - 8:45 AM', id: '1' },
-    { label: '8:45 - 9:30 AM', id: '2' },
-    { label: '9:30 - 10:15 AM', id: '3' },
-    { label: '10:15 - 11:00 AM', id: '4' },
-    { label: '11:00 - 11:45 AM', id: '5' },
-    { label: '11:45 - 12:30 PM', id: '6' },
-    { label: '12:30 - 1:15 PM', id: '7' },
-  ];
-
-  const studentClass = selectedChild?.class || 'JSS 3A';
-
-  const [timetableData] = useState<TimetableEntry[]>([
-    // Monday
-    { day: 'Monday', time: '8:00 - 8:45 AM', subject: 'Mathematics', teacher: 'Mr. Adeyemi', room: '', class: studentClass },
-    { day: 'Monday', time: '8:45 - 9:30 AM', subject: 'English Language', teacher: 'Mrs. Okonkwo', room: '', class: studentClass },
-    { day: 'Monday', time: '9:30 - 10:15 AM', subject: 'Biology', teacher: 'Dr. Ibrahim', room: '', class: studentClass },
-    { day: 'Monday', time: '10:15 - 11:00 AM', subject: 'Break', teacher: '-', room: '', class: studentClass },
-    { day: 'Monday', time: '11:00 - 11:45 AM', subject: 'Chemistry', teacher: 'Mrs. Eze', room: '', class: studentClass },
-    { day: 'Monday', time: '11:45 - 12:30 PM', subject: 'Physics', teacher: 'Mr. Balogun', room: '', class: studentClass },
-    { day: 'Monday', time: '12:30 - 1:15 PM', subject: 'Civic Education', teacher: 'Mr. Okafor', room: '', class: studentClass },
-    
-    // Tuesday
-    { day: 'Tuesday', time: '8:00 - 8:45 AM', subject: 'English Language', teacher: 'Mrs. Okonkwo', room: '', class: studentClass },
-    { day: 'Tuesday', time: '8:45 - 9:30 AM', subject: 'Mathematics', teacher: 'Mr. Adeyemi', room: '', class: studentClass },
-    { day: 'Tuesday', time: '9:30 - 10:15 AM', subject: 'Computer Science', teacher: 'Mr. Williams', room: '', class: studentClass },
-    { day: 'Tuesday', time: '10:15 - 11:00 AM', subject: 'Break', teacher: '-', room: '', class: studentClass },
-    { day: 'Tuesday', time: '11:00 - 11:45 AM', subject: 'Physics', teacher: 'Mr. Balogun', room: '', class: studentClass },
-    { day: 'Tuesday', time: '11:45 - 12:30 PM', subject: 'Economics', teacher: 'Mrs. Adeleke', room: '', class: studentClass },
-    { day: 'Tuesday', time: '12:30 - 1:15 PM', subject: 'French', teacher: 'Mme. Dubois', room: '', class: studentClass },
-    
-    // Wednesday
-    { day: 'Wednesday', time: '8:00 - 8:45 AM', subject: 'Mathematics', teacher: 'Mr. Adeyemi', room: '', class: studentClass },
-    { day: 'Wednesday', time: '8:45 - 9:30 AM', subject: 'English Language', teacher: 'Mrs. Okonkwo', room: '', class: studentClass },
-    { day: 'Wednesday', time: '9:30 - 10:15 AM', subject: 'Biology', teacher: 'Dr. Ibrahim', room: '', class: studentClass },
-    { day: 'Wednesday', time: '10:15 - 11:00 AM', subject: 'Break', teacher: '-', room: '', class: studentClass },
-    { day: 'Wednesday', time: '11:00 - 11:45 AM', subject: 'Chemistry', teacher: 'Mrs. Eze', room: '', class: studentClass },
-    { day: 'Wednesday', time: '11:45 - 12:30 PM', subject: 'Geography', teacher: 'Mr. Nwankwo', room: '', class: studentClass },
-    { day: 'Wednesday', time: '12:30 - 1:15 PM', subject: 'Physical Education', teacher: 'Coach John', room: '', class: studentClass },
-    
-    // Thursday
-    { day: 'Thursday', time: '8:00 - 8:45 AM', subject: 'Chemistry', teacher: 'Mrs. Eze', room: '', class: studentClass },
-    { day: 'Thursday', time: '8:45 - 9:30 AM', subject: 'Mathematics', teacher: 'Mr. Adeyemi', room: '', class: studentClass },
-    { day: 'Thursday', time: '9:30 - 10:15 AM', subject: 'English Language', teacher: 'Mrs. Okonkwo', room: '', class: studentClass },
-    { day: 'Thursday', time: '10:15 - 11:00 AM', subject: 'Break', teacher: '-', room: '', class: studentClass },
-    { day: 'Thursday', time: '11:00 - 11:45 AM', subject: 'Literature', teacher: 'Mrs. Okonkwo', room: '', class: studentClass },
-    { day: 'Thursday', time: '11:45 - 12:30 PM', subject: 'Further Mathematics', teacher: 'Mr. Adeyemi', room: '', class: studentClass },
-    { day: 'Thursday', time: '12:30 - 1:15 PM', subject: 'Fine Arts', teacher: 'Mrs. Johnson', room: '', class: studentClass },
-    
-    // Friday
-    { day: 'Friday', time: '8:00 - 8:45 AM', subject: 'Biology', teacher: 'Dr. Ibrahim', room: '', class: studentClass },
-    { day: 'Friday', time: '8:45 - 9:30 AM', subject: 'Physics', teacher: 'Mr. Balogun', room: '', class: studentClass },
-    { day: 'Friday', time: '9:30 - 10:15 AM', subject: 'Mathematics', teacher: 'Mr. Adeyemi', room: '', class: studentClass },
-    { day: 'Friday', time: '10:15 - 11:00 AM', subject: 'Break', teacher: '-', room: '', class: studentClass },
-    { day: 'Friday', time: '11:00 - 11:45 AM', subject: 'English Language', teacher: 'Mrs. Okonkwo', room: '', class: studentClass },
-    { day: 'Friday', time: '11:45 - 12:30 PM', subject: 'Music', teacher: 'Mr. David', room: '', class: studentClass },
-    { day: 'Friday', time: '12:30 - 1:15 PM', subject: 'Assembly/Clubs', teacher: 'Various', room: '', class: studentClass },
-  ]);
+  const [attendanceData] = useState<AttendanceDay[]>([]);
+  const [timetableData] = useState<TimetableEntry[]>([]);
 
   const getEntry = (day: string, time: string) => {
     // In a real app we'd filter by class, but for now we just show the mock data
@@ -218,13 +140,12 @@ export const AttendanceTracking: React.FC = () => {
                 {attendanceData.map((day, idx) => (
                   <div
                     key={idx}
-                    className={`p-3 rounded-lg border-2 ${
-                      day.status === 'present'
+                    className={`p-3 rounded-lg border-2 ${day.status === 'present'
                         ? 'bg-green-50 border-green-300'
                         : day.status === 'late'
-                        ? 'bg-amber-50 border-amber-300'
-                        : 'bg-red-50 border-red-300'
-                    }`}
+                          ? 'bg-amber-50 border-amber-300'
+                          : 'bg-red-50 border-red-300'
+                      }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-gray-600">{day.date}</span>
@@ -275,11 +196,10 @@ export const AttendanceTracking: React.FC = () => {
                       {daysOfWeek.map((day) => (
                         <th
                           key={day}
-                          className={`border-2 border-gray-300 p-3 text-center min-w-[160px] ${
-                            day === currentDay
+                          className={`border-2 border-gray-300 p-3 text-center min-w-[160px] ${day === currentDay
                               ? 'bg-blue-600 text-white'
                               : 'bg-blue-100 text-blue-950'
-                          }`}
+                            }`}
                         >
                           {day}
                           {day === currentDay && (
@@ -306,22 +226,19 @@ export const AttendanceTracking: React.FC = () => {
                           return (
                             <td
                               key={day}
-                              className={`border-2 border-gray-300 p-3 ${
-                                isCurrentCell ? 'bg-blue-50' : 'bg-white'
-                              }`}
+                              className={`border-2 border-gray-300 p-3 ${isCurrentCell ? 'bg-blue-50' : 'bg-white'
+                                }`}
                             >
                               {entry ? (
                                 <div
-                                  className={`p-3 rounded-lg ${
-                                    isBreak
+                                  className={`p-3 rounded-lg ${isBreak
                                       ? 'bg-amber-50 border border-amber-200'
                                       : 'bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow'
-                                  }`}
+                                    }`}
                                 >
                                   <h4
-                                    className={`font-semibold mb-2 ${
-                                      isBreak ? 'text-amber-900' : 'text-blue-950'
-                                    }`}
+                                    className={`font-semibold mb-2 ${isBreak ? 'text-amber-900' : 'text-blue-950'
+                                      }`}
                                   >
                                     {entry.subject}
                                   </h4>
